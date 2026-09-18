@@ -36,7 +36,7 @@ httpx2==2.13.0
     # via
     #   langsmith
     #   openai
-httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
+httpx2-jsfetch==1.0 ; python_full_version >= '3.12' and sys_platform == 'emscripten'
     # via httpx2
 idna==3.20
     # via

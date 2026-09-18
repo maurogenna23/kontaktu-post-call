@@ -8,7 +8,7 @@ import json
 from collections.abc import Callable
 from datetime import date, time
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeVar
 
 import openai
 from langchain.chat_models import init_chat_model
@@ -61,6 +61,7 @@ class SalidaModelo(BaseModel):
 
 
 Clasificador = Callable[[Evento], SalidaModelo]
+_T = TypeVar("_T")
 
 
 class ClasificadorLLM:
@@ -132,7 +133,7 @@ def interpretar(salida: SalidaModelo, evento: Evento) -> tuple[Clasificacion, Da
     return clasificacion, datos
 
 
-def _o_none[T](convertir: Callable[[str], T], texto: str | None) -> T | None:
+def _o_none(convertir: Callable[[str], _T], texto: str | None) -> _T | None:
     """Un dato mal formado del modelo se descarta (queda None) en vez de tumbar el evento."""
     if not texto:
         return None

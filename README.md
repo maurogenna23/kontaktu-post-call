@@ -1,7 +1,7 @@
 # Orquestador post-llamada
 
 Recibe **un evento** (fin de llamada o WhatsApp entrante), clasifica cómo fue la llamada y emite
-**una decisión** y **cero o más órdenes** al CRM. Python 3.12 + LangGraph 1.2.
+**una decisión** y **cero o más órdenes** al CRM. Python 3.11 o superior + LangGraph 1.2.
 
 ## Cómo se ejecuta
 
