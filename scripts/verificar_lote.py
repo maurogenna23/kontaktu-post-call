@@ -13,8 +13,8 @@ un proceso por evento, como pide el enunciado:
 Comprueba en cada lote:
 - esquemas: cada decisión contra decision.schema.json y cada cuerpo contra su operación del OpenAPI;
 - invariantes: una decisión por evento, órdenes referenciadas y con clave única, llamadas dentro
-  de la ventana, cerrar_llamada una vez por llamada nueva, nada tras reentregas, otras
-  organizaciones ni bajas;
+  de la ventana, cerrar_llamada una vez por llamada nueva, nada tras reentregas ni de otras
+  organizaciones, la baja sin otras órdenes y nada saliente después;
 - el resultado esperado de cada evento (etiqueta, operaciones y campos clave), fijado a mano
   leyendo casos.md;
 - R5: repetir el lote de ejemplo entero no añade ninguna orden;
@@ -329,7 +329,7 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         # R7: el lead responde el viernes; el WhatsApp del jueves ya salió y solo queda el del comercial.
         sintetico(28, "08-call-ended-marcos.json", "c_s28", "2026-09-15T16:42:00"),
         sintetico(29, "14-message-received-marcos.json", "c_s28", "2026-09-18T10:00:00"),
-        # N2: la baja cancela los recordatorios pendientes; después, su WhatsApp no tiene nada que cancelar.
+        # Caso 10: la baja no cancela los recordatorios pendientes; cuando el lead escribe, los cancela R7.
         sintetico(30, "08-call-ended-marcos.json", "c_s30", "2026-09-15T16:42:00"),
         sintetico(31, "06-call-ended-pedro.json", "c_s30", "2026-09-16T11:00:00"),
         sintetico(32, "14-message-received-marcos.json", "c_s30", "2026-09-16T12:00:00"),
@@ -479,10 +479,8 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_28": Esperado("documentacion_enviada", [CERRAR, RECORDATORIO, RECORDATORIO]),
         "sint_29": Esperado("no_aplica", ["cancelar_recordatorio"]),
         "sint_30": Esperado("documentacion_enviada", [CERRAR, RECORDATORIO, RECORDATORIO]),
-        "sint_31": Esperado(
-            "no_contactar", [CERRAR, "marcar_no_contactar", "cancelar_recordatorio", "cancelar_recordatorio"]
-        ),
-        "sint_32": Esperado("no_aplica", []),
+        "sint_31": Esperado("no_contactar", [CERRAR, "marcar_no_contactar"]),
+        "sint_32": Esperado("no_aplica", ["cancelar_recordatorio", "cancelar_recordatorio"]),
         "sint_33": Esperado(
             "documentacion_enviada",
             [CERRAR, RECORDATORIO, RECORDATORIO],
@@ -615,9 +613,13 @@ def comprobar(eventos: list[dict[str, Any]], datos: Path, esperado: dict[str, Es
         if (not nuevo or evento["organization_id"] != ORGANIZACION) and propias:
             fallos.append(f"{eid}: una reentrega o un evento de otra organización no emite órdenes")
         contacto = evento["lead"]["contact_id"]
-        if contacto in con_baja and set(operaciones) - {CERRAR}:
+        # N2: tras la baja, nada saliente; cancelar un recordatorio (R7) no le llega al lead.
+        if contacto in con_baja and set(operaciones) - {CERRAR, "cancelar_recordatorio"}:
             fallos.append(f"{eid}: el lead está dado de baja y recibió {operaciones}")
         if "marcar_no_contactar" in operaciones:
+            # Caso 10: la baja cierra la llamada y se registra; ninguna otra orden.
+            if set(operaciones) - {CERRAR, "marcar_no_contactar"}:
+                fallos.append(f"{eid}: la baja lleva otras órdenes: {operaciones}")
             con_baja.add(contacto)
         etiqueta = decision_de.get(eid, {}).get("etiqueta")
         for orden in propias:

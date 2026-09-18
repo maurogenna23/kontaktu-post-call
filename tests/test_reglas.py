@@ -173,8 +173,8 @@ def test_el_recordatorio_al_lead_sale_a_las_48_horas_aunque_caiga_fuera_de_la_ve
     }
 
 
-def test_la_baja_cancela_los_recordatorios_pendientes(campana: Campana) -> None:
-    plan = documentacion("2026-09-15T16:42:00+02:00", campana)
+def test_la_baja_no_cancela_los_recordatorios_y_los_cancela_r7_si_el_lead_escribe(campana: Campana) -> None:
+    plan = documentacion("2026-09-15T16:42:00+02:00", campana)  # lead: jueves 16:42 · comercial: viernes
     baja = decidir_llamada(
         en("06-call-ended-pedro.json", "2026-09-16T11:00:00+02:00"),
         Clasificacion(etiqueta="no_contactar", motivo="pidió la baja", confianza=0.95),
@@ -182,13 +182,14 @@ def test_la_baja_cancela_los_recordatorios_pendientes(campana: Campana) -> None:
         plan.memoria,
         campana,
     )
-    assert operaciones(baja) == [
-        "cerrar_llamada",
-        "marcar_no_contactar",
-        "cancelar_recordatorio",
-        "cancelar_recordatorio",
-    ]
-    assert baja.memoria.recordatorios_pendientes == ()
+    assert operaciones(baja) == ["cerrar_llamada", "marcar_no_contactar"]
+    assert baja.memoria.recordatorios_pendientes == plan.memoria.recordatorios_pendientes
+
+    respuesta = decidir_mensaje(
+        en("14-message-received-marcos.json", "2026-09-16T12:00:00+02:00"), baja.memoria, campana
+    )
+    assert operaciones(respuesta) == ["cancelar_recordatorio", "cancelar_recordatorio"]
+    assert respuesta.memoria.recordatorios_pendientes == ()
 
 
 def test_el_detalle_no_duplica_el_punto_del_motivo_del_modelo(campana: Campana) -> None:

@@ -65,8 +65,9 @@ Cada una lleva un comentario `Decisión:` en el código.
 - **Recordatorios:** el WhatsApp al lead sale a las 48 horas exactas, aunque caiga en domingo: el
   OpenAPI exige la ventana solo a `programar_llamada`. Al responder el lead solo se cancelan los que
   aún no salieron.
-- **Baja:** manda sobre cualquier etiqueta y cancela los recordatorios pendientes; después, cada
-  evento del lead solo cierra la llamada.
+- **Baja:** manda sobre cualquier etiqueta y no lleva ninguna otra orden (caso 10), tampoco cancelar
+  recordatorios: el contrato solo cancela cuando el lead responde (R7), y siguen guardados para eso.
+  Después, cada llamada del lead solo se cierra.
 - **La cita del CRM manda sobre el modelo**, salvo una baja; sin cita, una visita nunca está reservada.
 - **`nota_contexto`:** la del modelo; si no deja ninguna (o la deja en blanco), las notas del agente con
   el prefijo «Notas del agente:», todas las claves y sin traducir, para no perder las desconocidas.

@@ -72,14 +72,20 @@ def decidir_llamada(
     plan = _Planificador(evento, campana, memoria.model_copy(update={"intentos": memoria.intentos + 1}))
     plan.cerrar(clasificacion, evento.telephony)
 
-    # N2: una baja manda sobre cualquier otra etiqueta, y un lead dado de baja no recibe ninguna
-    # orden saliente. Solo se cierra la llamada y, la primera vez, se registra la baja.
+    # Caso 10 y N2: una baja manda sobre cualquier otra etiqueta. Se cierra la llamada y, la primera
+    # vez, se registra la baja; ninguna otra orden. Después, cada llamada del lead solo se cierra.
     if etiqueta == "no_contactar" or memoria.no_contactar:
         if not memoria.no_contactar:
+            # Decisión (revisada: una versión anterior cancelaba los recordatorios pendientes): la baja
+            # no cancela nada. Siguen en la memoria para que R7 los cancele si el lead escribe después.
+            # - El caso 10 es la regla específica de una baja y dice «ninguna otra orden», sin
+            #   «saliente». Gana sobre la N2 general, con el criterio del enunciado para dos plazos
+            #   aplicables: el específico sobre el general.
+            # - El contrato ata la cancelación a que el lead responda: R7 solo nombra el
+            #   message.received como disparador y cancelar_si solo prevé lead_responde.
+            # - Contraargumento: si el CRM no mirase su lista, el recordatorio le llegaría al lead. No
+            #   está demostrado: marcar_no_contactar con canal «todos» existe para bloquear esos envíos.
             plan.marcar_no_contactar(clasificacion.motivo)
-            # Decisión: los recordatorios que le quedaban pendientes le llegarían igual; se cancelan.
-            # Cancelar no es una orden saliente, así que no contradice «ninguna otra orden» (caso 10).
-            plan.cancelar_recordatorios("el lead pidió no ser contactado", evento.occurred_at)
         return plan.resultado()
 
     if datos.rechaza_whatsapp or etiqueta == "documentacion_pendiente":
