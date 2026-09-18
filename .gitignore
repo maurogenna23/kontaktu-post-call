@@ -1,0 +1,16 @@
+# Claves
+.env
+
+# Entorno y cachés de Python
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Lo que genera cada ejecución: salida y estado persistido entre eventos
+salida/
+estado/
+
+.DS_Store

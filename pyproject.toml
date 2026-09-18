@@ -1,0 +1,40 @@
+[project]
+name = "kontaktu-post-call"
+version = "0.1.0"
+description = "Orquestador post-llamada: clasifica cada llamada y emite las órdenes al CRM, con LangGraph"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph==1.2.11",
+    "langgraph-checkpoint-sqlite==3.1.1",
+    "langchain==1.4.1",
+    "langchain-openai==1.6.2",
+    "pydantic>=2.13",
+    "python-dotenv>=1.2",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "ruff>=0.16",
+    "mypy>=2.3",
+    "jsonschema>=4.26",
+    "types-pyyaml",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+disallow_untyped_defs = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
