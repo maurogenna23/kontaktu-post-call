@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from orquestador.calendario import (
+    dentro_de_ventana,
     describir,
     formatear,
     primer_instante_valido,
@@ -111,11 +112,15 @@ def decidir_llamada(
                 _SIN_HABLAR,
             )
         case "ocupado":
-            # Decisión: el reintento corto cae a mitad del rango ocupado_minutos_min..max
-            # (30..90 → 60 min), como en el ejemplo resuelto. Manda sobre la separación general.
+            # Decisión: el reintento corto va a mitad del rango ocupado_minutos_min..max (30..90 → 60
+            # min), como en el ejemplo resuelto. Si ahí la ventana está cerrada, el primer instante
+            # válido desde el mínimo, para quedarse en el rango si se puede: 19:10 → 19:40, no al día
+            # siguiente. Manda sobre la separación general.
             medio = (reintentos.ocupado_minutos_min + reintentos.ocupado_minutos_max) // 2
+            preferido = sumar(ocurrio, timedelta(minutes=medio), campana)
+            minimo = sumar(ocurrio, timedelta(minutes=reintentos.ocupado_minutos_min), campana)
             plan.llamar(
-                sumar(ocurrio, timedelta(minutes=medio), campana),
+                preferido if dentro_de_ventana(preferido, campana) else minimo,
                 "línea comunicando, reintento corto",
                 _SIN_HABLAR,
             )

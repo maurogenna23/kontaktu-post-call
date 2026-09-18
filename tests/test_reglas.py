@@ -7,6 +7,7 @@ import json
 from datetime import date, datetime, time
 from typing import Any
 
+import pytest
 from conftest import RAIZ, evento
 
 from orquestador.catalogo import Clasificacion, DatosConversacion, EtiquetaLlamada
@@ -195,3 +196,24 @@ def test_el_detalle_no_duplica_el_punto_del_motivo_del_modelo(campana: Campana) 
         evento("03-call-ended-elena.json"), clasificacion, SIN_DATOS, MemoriaLead(), campana
     )
     assert cuerpo(plan, "crear_tarea")["detalle"] == "Contestó otra persona. Sin reintentos por voz."
+
+
+@pytest.mark.parametrize(
+    ("instante", "esperado"),
+    [
+        (
+            "2026-09-15T19:10:00+02:00",
+            "2026-09-15T19:40:00+02:00",
+        ),  # +60 son las 20:10: primer hueco desde +30
+        ("2026-09-19T13:15:00+02:00", "2026-09-19T13:45:00+02:00"),  # sábado: la ventana cierra a las 14:00
+        ("2026-09-15T19:45:00+02:00", "2026-09-16T10:00:00+02:00"),  # nada del rango cabe: próxima apertura
+    ],
+)
+def test_ocupado_se_queda_entre_30_y_90_minutos_si_la_ventana_lo_permite(
+    instante: str, esperado: str, campana: Campana
+) -> None:
+    clasificacion = Clasificacion(etiqueta="ocupado", motivo="comunica", confianza=0.97)
+    plan = decidir_llamada(
+        en("02-call-ended-tomas.json", instante), clasificacion, SIN_DATOS, MemoriaLead(), campana
+    )
+    assert cuerpo(plan, "programar_llamada")["no_antes_de"] == esperado

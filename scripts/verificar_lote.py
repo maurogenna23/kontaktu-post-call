@@ -357,6 +357,8 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
                 ),
             },
         ),
+        # Ocupado a las 19:10: +60 cae fuera, pero 19:40 cumple el rango de 30 a 90 min y la ventana.
+        sintetico(40, "02-call-ended-tomas.json", "c_s40", "2026-09-15T19:10:00"),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -411,6 +413,7 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_37": Esperado("callback", [CERRAR, WHATSAPP], {PLANTILLA: "primer_toque_respaldo"}),
         "sint_38": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-10-26T10:00:00+01:00"}),
         "sint_39": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T20:00:00+02:00"}),
+        "sint_40": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T19:40:00+02:00"}),
     }
     return eventos, esperado
 
