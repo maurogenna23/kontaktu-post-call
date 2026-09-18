@@ -6,7 +6,7 @@ partir del instante de referencia, pero el cálculo de plazos y ventanas lo hace
 
 import json
 from collections.abc import Callable
-from datetime import date, time
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
@@ -134,7 +134,9 @@ def _linea(turno: Turno) -> str:
     return f"[{turno.time_in_call_secs}s] {quien}: {turno.message}"
 
 
-def interpretar(salida: SalidaModelo, evento: Evento) -> tuple[Clasificacion, DatosConversacion]:
+def interpretar(
+    salida: SalidaModelo, evento: Evento, campana: Campana
+) -> tuple[Clasificacion, DatosConversacion]:
     """Contrasta lo que dice el modelo con los hechos del evento y lo pasa al dominio."""
     etiqueta = salida.etiqueta
     hay_cita = evento.agent_outcome.appointment is not None
@@ -151,10 +153,56 @@ def interpretar(salida: SalidaModelo, evento: Evento) -> tuple[Clasificacion, Da
         callback_fecha=_o_none(date.fromisoformat, salida.callback_fecha),
         callback_hora=_o_none(time.fromisoformat, salida.callback_hora),
         rechaza_whatsapp=salida.rechaza_whatsapp,
-        email=salida.email,
-        nota_contexto=salida.nota_contexto,
+        email=_con_contenido(salida.email),
+        # Caso 7: la llamada siguiente arrastra lo ya recogido. Manda la nota del modelo, que contrasta
+        # las notas con la transcripción; si no deja ninguna, se usan las notas del agente.
+        nota_contexto=_con_contenido(salida.nota_contexto)
+        or _notas_del_agente(evento.agent_outcome.slots_snapshot, campana),
     )
     return clasificacion, datos
+
+
+def _con_contenido(texto: str | None) -> str | None:
+    """Una respuesta en blanco del modelo ("" o solo espacios) cuenta como ausente."""
+    return texto.strip() if texto and texto.strip() else None
+
+
+def _notas_del_agente(notas: dict[str, Any], campana: Campana) -> str | None:
+    """Las notas del agente (slots_snapshot) como texto para nota_contexto.
+
+    Decisión: regla genérica, sin traducir claves conocidas, para no perder las que no conozcamos:
+    todas las claves en su orden, con los guiones bajos como espacios; se omiten null y vacíos;
+    true/false son «sí»/«no» (un false es información); las listas se unen y las fechas ISO se
+    escriben en texto. El prefijo avisa de que no están contrastadas con la transcripción.
+    """
+    partes = [
+        f"{clave.replace('_', ' ')}: {texto}"
+        for clave, valor in notas.items()
+        if (texto := _valor_legible(valor, campana))
+    ]
+    return f"Notas del agente: {'; '.join(partes)}" if partes else None
+
+
+def _valor_legible(valor: Any, campana: Campana) -> str:
+    if isinstance(valor, bool):
+        return "sí" if valor else "no"
+    if valor is None:
+        return ""
+    if isinstance(valor, list):
+        return ", ".join(texto for elemento in valor if (texto := _valor_legible(elemento, campana)))
+    if isinstance(valor, dict):
+        return json.dumps(valor, ensure_ascii=False) if valor else ""
+    texto = str(valor).strip()
+    fecha = _fecha_con_zona(texto)
+    return describir(fecha, campana) if fecha else texto
+
+
+def _fecha_con_zona(texto: str) -> datetime | None:
+    try:
+        fecha = datetime.fromisoformat(texto)
+    except ValueError:
+        return None
+    return fecha if fecha.tzinfo else None
 
 
 def _o_none(convertir: Callable[[str], _T], texto: str | None) -> _T | None:

@@ -102,7 +102,8 @@ def clasificar_senalizacion(
 
 
 def clasificar_conversacion(estado: Estado, *, runtime: Runtime[Dependencias]) -> dict[str, Any]:
-    clasificacion, datos = interpretar(runtime.context.clasificador(estado["evento"]), estado["evento"])
+    evento = estado["evento"]
+    clasificacion, datos = interpretar(runtime.context.clasificador(evento), evento, runtime.context.campana)
     return {"clasificacion": clasificacion, "datos": datos}
 
 

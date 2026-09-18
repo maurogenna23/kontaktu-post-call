@@ -60,6 +60,9 @@ CERRAR, LLAMAR, TAREA = "cerrar_llamada", "programar_llamada", "crear_tarea"
 WHATSAPP, RECORDATORIO = "enviar_plantilla_whatsapp", "programar_recordatorio"
 NO_ANTES_DE, TIPO_TAREA = "programar_llamada.no_antes_de", "crear_tarea.tipo"
 PLANTILLA, VENCE = "enviar_plantilla_whatsapp.plantilla", "crear_tarea.vence_el"
+# Caso 7: la llamada siguiente arrastra lo ya recogido; por lógica, también la visita sin confirmar y
+# el callback. Se comprueba que la nota exista, venga del modelo o de las notas del agente.
+ARRASTRAN_CONTEXTO = {"cortada", "visita_sin_confirmar", "callback"}
 
 ESPERADO_EJEMPLO = {
     "evt_01": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T12:12:00+02:00"}),
@@ -615,7 +618,11 @@ def comprobar(eventos: list[dict[str, Any]], datos: Path, esperado: dict[str, Es
             fallos.append(f"{eid}: el lead está dado de baja y recibió {operaciones}")
         if "marcar_no_contactar" in operaciones:
             con_baja.add(contacto)
+        etiqueta = decision_de.get(eid, {}).get("etiqueta")
         for orden in propias:
+            nota = str(orden["cuerpo"].get("nota_contexto") or "").strip()
+            if orden["operacion"] == LLAMAR and etiqueta in ARRASTRAN_CONTEXTO and not nota:
+                fallos.append(f"{eid}: la llamada de {etiqueta} no arrastra nota_contexto (caso 7)")
             if orden["operacion"] == LLAMAR:
                 cuando = datetime.fromisoformat(orden["cuerpo"]["no_antes_de"])
                 if not dentro_de_ventana(cuando, CAMPANA):

@@ -64,11 +64,12 @@ def conversaciones() -> list[tuple[Evento, str]]:
 
 
 def evaluar(modelo: str, casos: list[tuple[Evento, str]]) -> dict[str, Any]:
-    clasificador = ClasificadorLLM(modelo, cargar_campana(RAIZ / "config" / "campana.yaml"))
+    campana = cargar_campana(RAIZ / "config" / "campana.yaml")
+    clasificador = ClasificadorLLM(modelo, campana)
 
     def una(evento: Evento) -> tuple[str, tuple[str | None, str | None], float]:
         inicio = time.perf_counter()
-        clasificacion, datos = interpretar(clasificador(evento), evento)
+        clasificacion, datos = interpretar(clasificador(evento), evento, campana)
         fecha = datos.callback_fecha.isoformat() if datos.callback_fecha else None
         hora = f"{datos.callback_hora:%H:%M}" if datos.callback_hora else None
         return clasificacion.etiqueta, (fecha, hora), time.perf_counter() - inicio
