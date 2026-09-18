@@ -60,8 +60,9 @@ WhatsApp: le programaría uno (N1). Luna acierta todo por 0,21 USD más cada mil
 
 Cada una lleva un comentario `Decisión:` en el código.
 
-- **Ocupado** a los 60 minutos (mitad de 30–90), como el ejemplo resuelto. **Cortada y visita sin
-  confirmar** a los 30, o en la primera franja válida si la ventana cerró; la visita no se reserva (N5).
+- **Ocupado** a los 60 minutos (mitad de 30–90), como el ejemplo resuelto; si ahí la ventana está
+  cerrada, el primer instante válido desde los 30 (19:10 → 19:40). **Cortada y visita sin confirmar** a
+  los 30, o en la primera franja válida si la ventana cerró; la visita no se reserva (N5).
 - **Callback** a lo que pidió el lead, que interpreta el modelo porque es lenguaje libre. Día sin hora: la
   apertura de la ventana ese día; franja: su comienzo (tarde, 16:00); hora sin fecha o ya pasada: la
   próxima vez que llega. Si cae en otra hora, u otro día si no dio hora, `aviso_cambio_hora`.
@@ -91,6 +92,8 @@ Cada una lleva un comentario `Decisión:` en el código.
   decisión nueva puede mostrar otra etiqueta y las operaciones nuevas se suman a las viejas; sin
   reentrega, la memoria no registra el evento. Tras la memoria: la reentrega aplica el evento dos veces
   (otro intento, otra cortada), aunque los `reminder_id` no se duplican. Pide un outbox.
+- **`nota_contexto` entre llamadas:** no se guarda en la memoria del lead. Si a una cortada le sigue una
+  llamada sin respuesta, la siguiente lleva «no se llegó a hablar con el lead» y pierde lo recogido.
 - **Eventos del mismo lead en paralelo:** el contrato es un proceso por evento, en orden.
 - **Timeout por nodo:** en LangGraph exige nodos asíncronos; el timeout está en el cliente de OpenAI.
 - **LangSmith** está apagado por defecto: activarlo (`.env.example`) añade red hacia LangSmith.
