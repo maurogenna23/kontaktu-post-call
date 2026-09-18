@@ -1,0 +1,39 @@
+# Configuración de la campaña de primer toque saliente.
+# Todos los cálculos de fecha usan esta zona horaria.
+
+campana:
+  system_key: first_touch_voice
+  organization_id: org_demo_a
+  zona_horaria: Europe/Madrid
+
+ventana_llamadas:
+  # Franjas en las que se puede llamar. Fuera de aquí, ninguna llamada programada es válida.
+  lunes:     ["10:00", "20:00"]
+  martes:    ["10:00", "20:00"]
+  miercoles: ["10:00", "20:00"]
+  jueves:    ["10:00", "20:00"]
+  viernes:   ["10:00", "20:00"]
+  sabado:    ["10:00", "14:00"]
+  domingo:   []
+
+reintentos:
+  max_intentos: 3                    # por lead, contando el primero
+  separacion_minima_horas: 2         # entre un intento y el siguiente (regla general)
+  ocupado_minutos_min: 30            # 486: reintento corto. Manda sobre la regla general
+  ocupado_minutos_max: 90
+  cortada_minutos_min: 30            # la llamada se cortó: se recupera el mismo día
+  cortada_horas_max: 4
+
+canal_respaldo: whatsapp             # cuando se agotan los intentos de voz
+
+# Las claves van sin tilde a propósito (son identificadores). Día hábil para plazos de tareas. OJO: no coincide con la ventana de llamadas, que incluye
+# el sábado por la mañana. Un sábado se puede llamar, pero no cuenta como día hábil.
+dias_habiles: [lunes, martes, miercoles, jueves, viernes]
+
+recordatorios:
+  documentacion_lead_horas: 48       # horas naturales, no hábiles
+  seguimiento_comercial_dias_habiles: 3
+
+tareas:
+  confirmar_visita_margen_horas: 2   # la tarea vence, como muy tarde, N horas antes de la visita
+  vencimiento_por_defecto_dias: 2    # días naturales

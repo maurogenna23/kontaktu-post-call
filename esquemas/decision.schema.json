@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kontaktu.local/reto/decision.schema.json",
+  "title": "Línea de salida/decisiones.jsonl",
+  "type": "object",
+  "required": [
+    "event_id",
+    "etiqueta",
+    "motivo",
+    "confianza",
+    "ordenes"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "call_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "etiqueta": {
+      "enum": [
+        "visita_reservada",
+        "documentacion_enviada",
+        "callback",
+        "sin_respuesta",
+        "ocupado",
+        "buzon",
+        "cortada",
+        "visita_sin_confirmar",
+        "persona_equivocada",
+        "no_contactar",
+        "rechazada",
+        "documentacion_pendiente",
+        "descartado",
+        "otro",
+        "no_aplica"
+      ],
+      "description": "no_aplica para lo que no es una llamada clasificable: un message.received o un evento de otra organización. Una reentrega NO es no_aplica: repite la etiqueta que ya tenía la llamada."
+    },
+    "motivo": {
+      "type": "string",
+      "description": "Una frase. Texto libre, no se compara."
+    },
+    "confianza": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "ordenes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "orden_id de las órdenes emitidas para este evento."
+    }
+  }
+}

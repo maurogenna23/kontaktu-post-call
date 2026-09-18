@@ -1,0 +1,82 @@
+{
+  "event_id": "evt_09",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T17:05:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0311",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0304"
+  },
+  "lead": {
+    "contact_id": "c_304",
+    "phone": "+34600000104",
+    "full_name": "Javier Ortín",
+    "lead_source": "idealista",
+    "property_ref": "RIB-1180",
+    "property_address": "calle Valle de Tormes 12, Boadilla del Monte",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0311",
+    "provider_call_id": "0311-telnyx",
+    "dialed_at": "2026-09-15T17:04:27+02:00",
+    "ringing_at": "2026-09-15T17:04:29+02:00",
+    "answered_at": "2026-09-15T17:04:33+02:00",
+    "ended_at": "2026-09-15T17:05:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 27,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, soy yo.",
+      "detected_at_secs": 1.7,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Javier?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, soy yo.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo por tu consulta sobre la venta de calle Valle de Tormes, Boadilla. ¿Tienes un minuto?",
+      "time_in_call_secs": 8
+    },
+    {
+      "role": "user",
+      "message": "Uf, ahora estoy en el trabajo. ¿Me puedes llamar mañana a las seis?",
+      "time_in_call_secs": 19
+    },
+    {
+      "role": "agent",
+      "message": "Claro, sin problema. Lo dejo anotado y te llamamos mañana. Un saludo.",
+      "time_in_call_secs": 24
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {
+      "callback_when_raw": "mañana a las seis"
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0311.ogg",
+    "duration_seconds": 27
+  },
+  "metrics": {
+    "turns": 5,
+    "ttft_ms_p50": 986
+  }
+}

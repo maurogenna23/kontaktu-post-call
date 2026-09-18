@@ -1,0 +1,233 @@
+openapi: 3.1.0
+info:
+  title: CRM Kontaktu · órdenes del orquestador post-llamada
+  version: "2026-09-01"
+  description: |
+    Las siete operaciones que el orquestador puede pedir al CRM.
+
+    EN ESTE RETO NO HAY SERVIDOR. Cada operación se "ejecuta" escribiendo una línea en
+    salida/ordenes.jsonl con esta forma:
+
+      {"orden_id": "...", "event_id": "...", "operacion": "<operationId>",
+       "idempotency_key": "...", "cuerpo": { <requestBody> }}
+
+    y continuando con la respuesta de ejemplo declarada aquí para esa operación.
+
+    idempotency_key: constrúyela de forma que el mismo hecho produzca siempre la misma clave.
+    Recomendado: "<idempotency_key del evento>:<operacion>", añadiendo un distintivo
+    (":lead", ":comercial", ":<reminder_id>"…) cuando un mismo evento emite más de una orden
+    del mismo tipo.
+
+    Los parámetros de ruta van dentro de "cuerpo".
+
+servers:
+  - url: https://crm.kontaktuai.com/api
+
+paths:
+  /v1/campaigns/entries/{entry_id}/close:
+    post:
+      operationId: cerrar_llamada
+      summary: Cierra la entrada de cola con el resultado. Se espera en todo call.ended procesado por primera vez.
+      parameters:
+        - { name: entry_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entry_id, status, etiqueta, motivo, confianza]
+              properties:
+                entry_id: { type: string, description: "Repite el parámetro de ruta." }
+                status:
+                  description: Estado de cola. Ver catálogo en casos.md.
+                  enum: [pending, scheduled, in_progress, completed, successful, failed,
+                         no_answer, callback_requested, dnc, refused, needs_review, skipped]
+                etiqueta:
+                  description: Etiqueta del catálogo de casos.
+                  enum: [visita_reservada, documentacion_enviada, callback, sin_respuesta, ocupado,
+                         buzon, cortada, visita_sin_confirmar, persona_equivocada, no_contactar,
+                         rechazada, documentacion_pendiente, descartado, otro]
+                motivo: { type: string }
+                confianza: { type: number, minimum: 0, maximum: 1 }
+                duration_seconds: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example: { success: true, entry_id: "<el que mandaste>" }
+
+  /v1/first-touch/calls:
+    post:
+      operationId: programar_llamada
+      summary: Programa un nuevo intento de llamada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entry_id, telefono, no_antes_de, motivo]
+              properties:
+                entry_id: { type: string }
+                telefono: { type: string }
+                no_antes_de:
+                  type: string
+                  format: date-time
+                  description: >
+                    Instante a partir del cual se puede llamar, con offset explícito.
+                    Tiene que caer dentro de la ventana de llamadas de campana.yaml.
+                motivo: { type: string }
+                nota_contexto:
+                  type: string
+                  description: Lo que ya se habló, para que el agente no repita preguntas.
+      responses:
+        "201":
+          description: Programada
+          content:
+            application/json:
+              example: { scheduled_call_id: "<genera uno único>", status: "scheduled" }
+
+  /v1/whatsapp/send-template:
+    post:
+      operationId: enviar_plantilla_whatsapp
+      summary: Envía una plantilla aprobada por WhatsApp.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization_id, telefono, plantilla]
+              properties:
+                organization_id: { type: string }
+                telefono: { type: string }
+                plantilla:
+                  enum: [primer_toque_respaldo, recordatorio_documentacion, aviso_cambio_hora]
+                parametros:
+                  type: object
+                  description: "Variables de la plantilla. Libres; no se comparan."
+                  additionalProperties: { type: string }
+                idioma: { type: string, default: es }
+      responses:
+        "200":
+          description: Enviada
+          content:
+            application/json:
+              example: { success: true, message_id: "<genera uno único>" }
+
+  /v1/reminders:
+    post:
+      operationId: programar_recordatorio
+      summary: Programa un recordatorio futuro, cancelable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contact_id, canal, cuando]
+              properties:
+                contact_id: { type: string }
+                canal:
+                  description: A quién va el recordatorio.
+                  enum: [whatsapp_lead, tarea_comercial]
+                plantilla:
+                  description: Obligatoria si canal es whatsapp_lead.
+                  enum: [primer_toque_respaldo, recordatorio_documentacion, aviso_cambio_hora]
+                tipo_tarea:
+                  description: Obligatorio si canal es tarea_comercial.
+                  enum: [confirmar_visita_direccion, verificar_telefono,
+                         enviar_documentacion_email, llamar_a_mano, revisar_llamada]
+                cuando: { type: string, format: date-time }
+                cancelar_si:
+                  description: >
+                    Documenta la intención. NO cancela nada por sí solo: la cancelación la emite tu
+                    sistema con cancelar_recordatorio cuando llegue el evento (regla R7).
+                  enum: [lead_responde, ninguna]
+                  default: ninguna
+      responses:
+        "201":
+          description: Programado
+          content:
+            application/json:
+              example: { reminder_id: "<genera uno único y persístelo>", status: "scheduled" }
+
+  /v1/reminders/{reminder_id}:
+    delete:
+      operationId: cancelar_recordatorio
+      summary: Cancela un recordatorio pendiente.
+      parameters:
+        - { name: reminder_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reminder_id, motivo]
+              properties:
+                reminder_id: { type: string, description: "Repite el parámetro de ruta. El que TÚ generaste al programarlo." }
+                motivo: { type: string }
+      responses:
+        "200":
+          description: Cancelado
+          content:
+            application/json:
+              example: { success: true, reminder_id: "<el que mandaste>", status: "cancelled" }
+
+  /v1/tasks:
+    post:
+      operationId: crear_tarea
+      summary: Crea una tarea para un humano.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contact_id, tipo, titulo, vence_el]
+              properties:
+                contact_id: { type: string }
+                call_id: { type: [string, "null"] }
+                tipo:
+                  enum: [confirmar_visita_direccion, verificar_telefono,
+                         enviar_documentacion_email, llamar_a_mano, revisar_llamada]
+                titulo: { type: string }
+                detalle: { type: string }
+                vence_el: { type: string, format: date-time }
+                asignada_a:
+                  enum: [comercial_asignado, cualquiera]
+                  default: comercial_asignado
+      responses:
+        "201":
+          description: Creada
+          content:
+            application/json:
+              example: { task_id: "<genera uno único>", status: "open" }
+
+  /v1/do-not-contact:
+    post:
+      operationId: marcar_no_contactar
+      summary: Marca un teléfono como no contactable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [telefono, canal, motivo]
+              properties:
+                telefono: { type: string }
+                contact_id: { type: [string, "null"] }
+                canal:
+                  enum: [todos, voz, whatsapp]
+                motivo: { type: string }
+                origen: { type: string }
+      responses:
+        "200":
+          description: Marcado
+          content:
+            application/json:
+              example: { success: true, dnc_id: "<genera uno único>" }

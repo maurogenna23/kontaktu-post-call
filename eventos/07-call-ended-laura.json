@@ -1,0 +1,151 @@
+{
+  "event_id": "evt_07",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T16:10:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0309",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0309"
+  },
+  "lead": {
+    "contact_id": "c_309",
+    "phone": "+34600000101",
+    "full_name": "Laura Nieto",
+    "lead_source": "idealista",
+    "property_ref": "RIB-2088",
+    "property_address": null,
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0309",
+    "provider_call_id": "0309-telnyx",
+    "dialed_at": "2026-09-15T16:07:03+02:00",
+    "ringing_at": "2026-09-15T16:07:05+02:00",
+    "answered_at": "2026-09-15T16:07:09+02:00",
+    "ended_at": "2026-09-15T16:10:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 171,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, soy yo, dime.",
+      "detected_at_secs": 2.0,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Laura?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, soy yo, dime.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo por el alquiler de calle de Sorolla, Majadahonda. ¿Lo sigues buscando?",
+      "time_in_call_secs": 9
+    },
+    {
+      "role": "user",
+      "message": "Sí, sí, lo sigo buscando. ¿Me cuentas cosas del piso?",
+      "time_in_call_secs": 22
+    },
+    {
+      "role": "agent",
+      "message": "Es un ático dúplex reformado, cuatro dormitorios, tres baños, dos terrazas y plaza de garaje incluida. La urbanización tiene piscina y pistas de pádel.",
+      "time_in_call_secs": 26
+    },
+    {
+      "role": "user",
+      "message": "Ah, vale, genial. ¿La plaza de garaje está incluida en el precio?",
+      "time_in_call_secs": 44
+    },
+    {
+      "role": "agent",
+      "message": "Sí, está incluida. No tendrías que pagar nada extra por ella. ¿Alguna otra cosa que quieras saber?",
+      "time_in_call_secs": 49
+    },
+    {
+      "role": "user",
+      "message": "No, eso sería todo por ahora.",
+      "time_in_call_secs": 62
+    },
+    {
+      "role": "agent",
+      "message": "Antes de terminar, ¿te gustaría verlo en persona?",
+      "time_in_call_secs": 65
+    },
+    {
+      "role": "user",
+      "message": "Sí, me viene muy bien verlo.",
+      "time_in_call_secs": 71
+    },
+    {
+      "role": "agent",
+      "message": "Para la visita, ¿te vendría mejor el jueves por la mañana? Tengo a las 11:00 o a las 12:30.",
+      "time_in_call_secs": 75
+    },
+    {
+      "role": "user",
+      "message": "El jueves a las once me va perfecto.",
+      "time_in_call_secs": 90
+    },
+    {
+      "role": "agent",
+      "message": "Te confirmo. La visita queda a nombre de Laura para calle de Sorolla, Majadahonda, el jueves 17 a las 11:00. ¿Te lo dejo reservado así?",
+      "time_in_call_secs": 95
+    },
+    {
+      "role": "user",
+      "message": "Sí, perfecto. ¿Y dónde es exactamente? ¿Me lo mandáis?",
+      "time_in_call_secs": 110
+    },
+    {
+      "role": "agent",
+      "message": "Un compañero te confirma la dirección exacta antes de la visita. Ya lo tengo todo anotado. ¿Alguna otra cosa antes de terminar?",
+      "time_in_call_secs": 116
+    },
+    {
+      "role": "user",
+      "message": "No, eso es todo. Muchas gracias, hasta luego.",
+      "time_in_call_secs": 160
+    },
+    {
+      "role": "agent",
+      "message": "Venga, pues nada. Un saludo. Hasta luego.",
+      "time_in_call_secs": 164
+    }
+  ],
+  "agent_outcome": {
+    "appointment": {
+      "appointment_id": "apt_5512",
+      "start_time": "2026-09-17T11:00:00+02:00"
+    },
+    "slots_snapshot": {
+      "operacion": "alquiler",
+      "zonas": [
+        "Majadahonda"
+      ],
+      "presupuesto": null,
+      "habitaciones": null,
+      "fecha_mudanza": null
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0309.ogg",
+    "duration_seconds": 171
+  },
+  "metrics": {
+    "turns": 17,
+    "ttft_ms_p50": 993
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "event_id": "evt_10",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T17:30:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0312",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0310"
+  },
+  "lead": {
+    "contact_id": "c_310",
+    "phone": "+34600000109",
+    "full_name": "Sonia Grao",
+    "lead_source": "idealista",
+    "property_ref": "RIB-2041",
+    "property_address": "calle de Sorolla 8, Majadahonda",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0312",
+    "provider_call_id": "0312-telnyx",
+    "dialed_at": "2026-09-15T17:29:45+02:00",
+    "ringing_at": "2026-09-15T17:29:47+02:00",
+    "answered_at": "2026-09-15T17:29:51+02:00",
+    "ended_at": "2026-09-15T17:30:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "ROOM_DELETED",
+    "hung_up_by": "agent",
+    "duration_seconds": 9,
+    "amd": {
+      "result": "machine-vm",
+      "greeting_transcript": "Hola, ahora mismo no puedo atenderte.",
+      "detected_at_secs": 2.9,
+      "source": "heuristic_regex"
+    }
+  },
+  "transcript": [
+    {
+      "role": "user",
+      "message": "Hola, ahora mismo no puedo atenderte.",
+      "time_in_call_secs": 4
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0312.ogg",
+    "duration_seconds": 9
+  },
+  "metrics": {
+    "turns": 1,
+    "ttft_ms_p50": 987
+  }
+}

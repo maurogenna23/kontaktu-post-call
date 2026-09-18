@@ -1,0 +1,48 @@
+{
+  "event_id": "evt_02",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T10:31:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0306",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0306"
+  },
+  "lead": {
+    "contact_id": "c_306",
+    "phone": "+34600000106",
+    "full_name": "Tomás Bregel",
+    "lead_source": "fotocasa",
+    "property_ref": "RIB-2041",
+    "property_address": "calle de Sorolla 8, Majadahonda",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0306",
+    "provider_call_id": "0306-telnyx",
+    "dialed_at": "2026-09-15T10:30:36+02:00",
+    "ringing_at": "2026-09-15T10:30:38+02:00",
+    "answered_at": null,
+    "ended_at": "2026-09-15T10:31:00+02:00",
+    "sip_status_code": 486,
+    "sip_status": "Busy Here",
+    "disconnect_reason": "USER_REJECTED",
+    "hung_up_by": null,
+    "duration_seconds": 0,
+    "amd": {
+      "result": "not_run",
+      "greeting_transcript": null,
+      "detected_at_secs": null,
+      "source": "none"
+    }
+  },
+  "transcript": [],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": null,
+  "metrics": null
+}

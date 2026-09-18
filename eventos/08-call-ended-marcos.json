@@ -1,0 +1,107 @@
+{
+  "event_id": "evt_08",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T16:42:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0310",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0302"
+  },
+  "lead": {
+    "contact_id": "c_302",
+    "phone": "+34600000102",
+    "full_name": "Marcos Deval",
+    "lead_source": "fotocasa",
+    "property_ref": "RIB-1904",
+    "property_address": "avenida de Europa 44, Pozuelo de Alarcón",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0310",
+    "provider_call_id": "0310-telnyx",
+    "dialed_at": "2026-09-15T16:40:18+02:00",
+    "ringing_at": "2026-09-15T16:40:20+02:00",
+    "answered_at": "2026-09-15T16:40:24+02:00",
+    "ended_at": "2026-09-15T16:42:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 96,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, dime.",
+      "detected_at_secs": 1.6,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Marcos?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, dime.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por la vivienda de avenida de Europa, Pozuelo. ¿Sigues interesado?",
+      "time_in_call_secs": 8
+    },
+    {
+      "role": "user",
+      "message": "Sí, pero necesito ver la nota simple y el certificado energético antes de nada.",
+      "time_in_call_secs": 22
+    },
+    {
+      "role": "agent",
+      "message": "Claro. Te puedo mandar ahora mismo un enlace con toda la documentación del inmueble por WhatsApp, a este mismo número. ¿Te va bien?",
+      "time_in_call_secs": 28
+    },
+    {
+      "role": "user",
+      "message": "Sí, sí, mándamelo por WhatsApp que lo miro esta noche.",
+      "time_in_call_secs": 41
+    },
+    {
+      "role": "agent",
+      "message": "Hecho, te lo acabo de enviar. Cuando lo revises, dime y seguimos.",
+      "time_in_call_secs": 46
+    },
+    {
+      "role": "user",
+      "message": "Perfecto. Gracias.",
+      "time_in_call_secs": 58
+    },
+    {
+      "role": "agent",
+      "message": "A ti. Un saludo.",
+      "time_in_call_secs": 61
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {
+      "operacion": "compra",
+      "zonas": [
+        "Pozuelo de Alarcón"
+      ],
+      "docs_enviadas": true,
+      "canal_consentido": "whatsapp"
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0310.ogg",
+    "duration_seconds": 96
+  },
+  "metrics": {
+    "turns": 9,
+    "ttft_ms_p50": 985
+  }
+}

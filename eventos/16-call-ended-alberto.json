@@ -1,0 +1,48 @@
+{
+  "event_id": "evt_16",
+  "type": "call.ended",
+  "occurred_at": "2026-09-16T10:00:00+02:00",
+  "organization_id": "org_demo_b",
+  "idempotency_key": "lk-out-0990",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0990"
+  },
+  "lead": {
+    "contact_id": "c_990",
+    "phone": "+34600000990",
+    "full_name": "Alberto Sanz",
+    "lead_source": "idealista",
+    "property_ref": "OTRA-0001",
+    "property_address": "calle Mayor 1, Getafe",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0990",
+    "provider_call_id": "0990-telnyx",
+    "dialed_at": "2026-09-16T09:59:36+02:00",
+    "ringing_at": "2026-09-16T09:59:38+02:00",
+    "answered_at": null,
+    "ended_at": "2026-09-16T10:00:00+02:00",
+    "sip_status_code": 480,
+    "sip_status": "Temporarily Unavailable",
+    "disconnect_reason": "USER_UNAVAILABLE",
+    "hung_up_by": null,
+    "duration_seconds": 0,
+    "amd": {
+      "result": "not_run",
+      "greeting_transcript": null,
+      "detected_at_secs": null,
+      "source": "none"
+    }
+  },
+  "transcript": [],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": null,
+  "metrics": null
+}

@@ -1,0 +1,94 @@
+{
+  "event_id": "evt_04",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T11:47:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0305",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0305"
+  },
+  "lead": {
+    "contact_id": "c_305",
+    "phone": "+34600000105",
+    "full_name": "Rosa Iniesta",
+    "lead_source": "idealista",
+    "property_ref": "RIB-2041",
+    "property_address": "calle de Sorolla 8, Majadahonda",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0305",
+    "provider_call_id": "0305-telnyx",
+    "dialed_at": "2026-09-15T11:46:16+02:00",
+    "ringing_at": "2026-09-15T11:46:18+02:00",
+    "answered_at": "2026-09-15T11:46:22+02:00",
+    "ended_at": "2026-09-15T11:47:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 38,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, sí, soy yo, dime.",
+      "detected_at_secs": 2.1,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Rosa?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, soy yo, dime.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo porque nos ha llegado tu consulta en Idealista sobre el alquiler de calle de Sorolla, Majadahonda. ¿Lo sigues buscando?",
+      "time_in_call_secs": 9
+    },
+    {
+      "role": "user",
+      "message": "Sí, sí. Bueno, en Majadahonda o por Las Rozas, lo que salga.",
+      "time_in_call_secs": 21
+    },
+    {
+      "role": "agent",
+      "message": "Perfecto, lo anoto. ¿Y qué presupuesto máximo manejáis al mes?",
+      "time_in_call_secs": 26
+    },
+    {
+      "role": "user",
+      "message": "Pues entre los dos unos mil dosci…",
+      "time_in_call_secs": 35
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {
+      "operacion": "alquiler",
+      "zonas": [
+        "Majadahonda",
+        "Las Rozas"
+      ],
+      "presupuesto": null,
+      "habitaciones": null,
+      "fecha_mudanza": null
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0305.ogg",
+    "duration_seconds": 38
+  },
+  "metrics": {
+    "turns": 6,
+    "ttft_ms_p50": 989
+  }
+}

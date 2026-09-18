@@ -1,0 +1,48 @@
+{
+  "event_id": "evt_01",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T10:12:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0301",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0301"
+  },
+  "lead": {
+    "contact_id": "c_301",
+    "phone": "+34600000103",
+    "full_name": "Nuria Olalde",
+    "lead_source": "idealista",
+    "property_ref": "RIB-1180",
+    "property_address": "calle Valle de Tormes 12, Boadilla del Monte",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0301",
+    "provider_call_id": "0301-telnyx",
+    "dialed_at": "2026-09-15T10:11:36+02:00",
+    "ringing_at": "2026-09-15T10:11:38+02:00",
+    "answered_at": null,
+    "ended_at": "2026-09-15T10:12:00+02:00",
+    "sip_status_code": 480,
+    "sip_status": "Temporarily Unavailable",
+    "disconnect_reason": "USER_UNAVAILABLE",
+    "hung_up_by": null,
+    "duration_seconds": 0,
+    "amd": {
+      "result": "not_run",
+      "greeting_transcript": null,
+      "detected_at_secs": null,
+      "source": "none"
+    }
+  },
+  "transcript": [],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": null,
+  "metrics": null
+}

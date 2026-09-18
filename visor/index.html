@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cola de primer toque · visor del reto</title>
+<style>
+:root{
+  --bg:#faf8f5; --panel:#fff; --linea:#e7e1d8; --texto:#1c1917; --suave:#78716c;
+  --acento:#d9480f; --ok:#15803d; --mal:#b91c1c; --aviso:#a16207;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#17150f; --panel:#211e18; --linea:#3a352c; --texto:#f5f0e8; --suave:#a8a29e;
+  --acento:#fb923c; --ok:#4ade80; --mal:#f87171; --aviso:#fbbf24;
+}}
+:root[data-theme=dark]{
+  --bg:#17150f; --panel:#211e18; --linea:#3a352c; --texto:#f5f0e8; --suave:#a8a29e;
+  --acento:#fb923c; --ok:#4ade80; --mal:#f87171; --aviso:#fbbf24;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--texto);display:flex;flex-direction:column;
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{border-bottom:1px solid var(--linea);padding:18px 24px;display:flex;
+  align-items:baseline;gap:16px;flex-wrap:wrap;background:var(--panel)}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+h1 span{color:var(--acento)}
+.sub{color:var(--suave);font-size:13px}
+.cargar{margin-left:auto;display:flex;align-items:center;gap:10px}
+label.btn{border:1px solid var(--linea);background:var(--bg);padding:7px 14px;border-radius:7px;
+  cursor:pointer;font-size:13px;font-weight:550}
+label.btn:hover{border-color:var(--acento);color:var(--acento)}
+input[type=file]{display:none}
+main{display:grid;grid-template-columns:minmax(340px,420px) 1fr;gap:0;
+  flex:1;min-height:0;overflow:hidden}
+@media (max-width:900px){main{grid-template-columns:1fr;overflow:visible}}
+/* min-width:0 es obligatorio: un hijo de grid no encoge por debajo de su contenido
+   sin él, y el panel derecho desborda en pantallas estrechas. */
+#cola{border-right:1px solid var(--linea);overflow-y:auto;background:var(--panel);min-width:0}
+#detalle{overflow-y:auto;padding:22px 26px;min-width:0}
+.fila{padding:13px 18px;border-bottom:1px solid var(--linea);cursor:pointer;display:grid;
+  grid-template-columns:26px 1fr auto;gap:11px;align-items:start}
+.fila:hover{background:var(--bg)}
+.fila[aria-selected=true]{background:var(--bg);box-shadow:inset 3px 0 0 var(--acento)}
+.n{font:11px/1.6 var(--mono);color:var(--suave)}
+.nom{font-weight:600;font-size:14px}
+.meta{color:var(--suave);font-size:12px;margin-top:2px}
+.pill{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--linea);
+  white-space:nowrap;font-weight:550}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.pill.mal{color:var(--mal);border-color:var(--mal)}
+.pill.crit{background:var(--mal);color:#fff;border-color:var(--mal)}
+h2{font-size:15px;margin:26px 0 10px;font-weight:650}
+h2:first-child{margin-top:0}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px;margin-bottom:6px}
+td,th{border-bottom:1px solid var(--linea);padding:6px 10px 6px 0;text-align:left;
+  vertical-align:top;overflow-wrap:anywhere}
+th{color:var(--suave);font-weight:550;width:180px}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+.turno{display:grid;grid-template-columns:52px 74px 1fr;gap:10px;padding:5px 0;
+  border-bottom:1px solid var(--linea);font-size:13.5px}
+.seg{color:var(--suave);font-family:var(--mono);font-size:11.5px;text-align:right}
+.quien{color:var(--suave);font-size:11.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.03em}
+.quien.agente{color:var(--acento)}
+.orden{border:1px solid var(--linea);border-radius:8px;padding:12px 14px;margin-bottom:9px;
+  background:var(--panel)}
+.orden.ok{border-left:3px solid var(--ok)}
+.orden.mal{border-left:3px solid var(--mal)}
+.orden .op{font-weight:650;font-size:13px;font-family:var(--mono)}
+.orden pre{margin:8px 0 0;font-size:12px;white-space:pre-wrap;word-break:break-word;
+  color:var(--suave)}
+.fallo{color:var(--mal);font-size:12.5px;margin-top:5px}
+.nota{background:var(--bg);border-left:3px solid var(--aviso);padding:9px 13px;
+  font-size:13px;margin:10px 0;color:var(--suave)}
+.vacio{color:var(--suave);padding:60px 26px;text-align:center;font-size:14px}
+.marcador{display:flex;gap:22px;padding:13px 18px;border-bottom:1px solid var(--linea);
+  font-size:13px;background:var(--bg)}
+.marcador b{display:block;font-size:19px;font-weight:650;letter-spacing:-.02em}
+</style></head><body>
+<header>
+  <h1>Cola de primer toque <span>·</span> visor</h1>
+  <div class="sub">Reto técnico Kontaktu</div>
+  <div class="cargar">
+    <span class="sub" id="estado">sin salida cargada</span>
+    <label class="btn">Cargar carpeta salida/
+      <input type="file" id="dir" webkitdirectory directory multiple></label>
+  </div>
+</header>
+<main>
+  <div id="cola"></div>
+  <div id="detalle"><div class="vacio">Carga tu carpeta <code>salida/</code> para ver la cola.<br>
+    Mientras tanto, puedes pinchar cualquier evento para leer la llamada.</div></div>
+</main>
+<script>
+const EVENTOS = [{"event_id": "evt_01", "type": "call.ended", "occurred_at": "2026-09-15T10:12:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0301", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0301"}, "lead": {"contact_id": "c_301", "phone": "+34600000103", "full_name": "Nuria Olalde", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0301", "provider_call_id": "0301-telnyx", "dialed_at": "2026-09-15T10:11:36+02:00", "ringing_at": "2026-09-15T10:11:38+02:00", "answered_at": null, "ended_at": "2026-09-15T10:12:00+02:00", "sip_status_code": 480, "sip_status": "Temporarily Unavailable", "disconnect_reason": "USER_UNAVAILABLE", "hung_up_by": null, "duration_seconds": 0, "amd": {"result": "not_run", "greeting_transcript": null, "detected_at_secs": null, "source": "none"}}, "transcript": [], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": null, "metrics": null}, {"event_id": "evt_02", "type": "call.ended", "occurred_at": "2026-09-15T10:31:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0306", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0306"}, "lead": {"contact_id": "c_306", "phone": "+34600000106", "full_name": "Tomás Bregel", "lead_source": "fotocasa", "property_ref": "RIB-2041", "property_address": "calle de Sorolla 8, Majadahonda", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0306", "provider_call_id": "0306-telnyx", "dialed_at": "2026-09-15T10:30:36+02:00", "ringing_at": "2026-09-15T10:30:38+02:00", "answered_at": null, "ended_at": "2026-09-15T10:31:00+02:00", "sip_status_code": 486, "sip_status": "Busy Here", "disconnect_reason": "USER_REJECTED", "hung_up_by": null, "duration_seconds": 0, "amd": {"result": "not_run", "greeting_transcript": null, "detected_at_secs": null, "source": "none"}}, "transcript": [], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": null, "metrics": null}, {"event_id": "evt_03", "type": "call.ended", "occurred_at": "2026-09-15T11:04:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0307", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0307"}, "lead": {"contact_id": "c_307", "phone": "+34600000107", "full_name": "Elena Vaquero", "lead_source": "idealista", "property_ref": "RIB-1904", "property_address": "avenida de Europa 44, Pozuelo de Alarcón", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0307", "provider_call_id": "0307-telnyx", "dialed_at": "2026-09-15T11:03:35+02:00", "ringing_at": "2026-09-15T11:03:37+02:00", "answered_at": "2026-09-15T11:03:41+02:00", "ended_at": "2026-09-15T11:04:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 19, "amd": {"result": "human", "greeting_transcript": "¿Sí? ¿Quién es?", "detected_at_secs": 1.9, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, buenas. ¿Hablo con Elena? Te llamo de parte de Ribera Inmobiliaria.", "time_in_call_secs": 3}, {"role": "user", "message": "Aquí no vive ninguna Elena. Se ha equivocado.", "time_in_call_secs": 8}, {"role": "agent", "message": "Ah, perdona. ¿Sabrías decirme si este número es de alguien más?", "time_in_call_secs": 11}, {"role": "user", "message": "No, no. Este número es mío de toda la vida. Que no.", "time_in_call_secs": 15}, {"role": "agent", "message": "Entendido, disculpa la molestia. Buen día.", "time_in_call_secs": 18}], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0307.ogg", "duration_seconds": 19}, "metrics": {"turns": 5, "ttft_ms_p50": 991}}, {"event_id": "evt_04", "type": "call.ended", "occurred_at": "2026-09-15T11:47:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0305", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0305"}, "lead": {"contact_id": "c_305", "phone": "+34600000105", "full_name": "Rosa Iniesta", "lead_source": "idealista", "property_ref": "RIB-2041", "property_address": "calle de Sorolla 8, Majadahonda", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0305", "provider_call_id": "0305-telnyx", "dialed_at": "2026-09-15T11:46:16+02:00", "ringing_at": "2026-09-15T11:46:18+02:00", "answered_at": "2026-09-15T11:46:22+02:00", "ended_at": "2026-09-15T11:47:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 38, "amd": {"result": "human", "greeting_transcript": "Sí, sí, soy yo, dime.", "detected_at_secs": 2.1, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Rosa?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo, dime.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo porque nos ha llegado tu consulta en Idealista sobre el alquiler de calle de Sorolla, Majadahonda. ¿Lo sigues buscando?", "time_in_call_secs": 9}, {"role": "user", "message": "Sí, sí. Bueno, en Majadahonda o por Las Rozas, lo que salga.", "time_in_call_secs": 21}, {"role": "agent", "message": "Perfecto, lo anoto. ¿Y qué presupuesto máximo manejáis al mes?", "time_in_call_secs": 26}, {"role": "user", "message": "Pues entre los dos unos mil dosci…", "time_in_call_secs": 35}], "agent_outcome": {"appointment": null, "slots_snapshot": {"operacion": "alquiler", "zonas": ["Majadahonda", "Las Rozas"], "presupuesto": null, "habitaciones": null, "fecha_mudanza": null}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0305.ogg", "duration_seconds": 38}, "metrics": {"turns": 6, "ttft_ms_p50": 989}}, {"event_id": "evt_05", "type": "call.ended", "occurred_at": "2026-09-15T12:20:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0302", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0301"}, "lead": {"contact_id": "c_301", "phone": "+34600000103", "full_name": "Nuria Olalde", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0302", "provider_call_id": "0302-telnyx", "dialed_at": "2026-09-15T12:19:36+02:00", "ringing_at": "2026-09-15T12:19:38+02:00", "answered_at": null, "ended_at": "2026-09-15T12:20:00+02:00", "sip_status_code": 480, "sip_status": "Temporarily Unavailable", "disconnect_reason": "USER_UNAVAILABLE", "hung_up_by": null, "duration_seconds": 0, "amd": {"result": "not_run", "greeting_transcript": null, "detected_at_secs": null, "source": "none"}}, "transcript": [], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": null, "metrics": null}, {"event_id": "evt_06", "type": "call.ended", "occurred_at": "2026-09-15T12:55:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0308", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0308"}, "lead": {"contact_id": "c_308", "phone": "+34600000108", "full_name": "Pedro Lasa", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0308", "provider_call_id": "0308-telnyx", "dialed_at": "2026-09-15T12:54:23+02:00", "ringing_at": "2026-09-15T12:54:25+02:00", "answered_at": "2026-09-15T12:54:29+02:00", "ended_at": "2026-09-15T12:55:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 31, "amd": {"result": "human", "greeting_transcript": "Sí, soy yo.", "detected_at_secs": 1.7, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Pedro?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo porque nos ha llegado tu consulta en Idealista sobre la venta de calle Valle de Tormes, Boadilla del Monte. ¿Todavía te interesa?", "time_in_call_secs": 9}, {"role": "user", "message": "Mira, prefiero que no me llaméis más. Dadme de baja, por favor.", "time_in_call_secs": 20}, {"role": "agent", "message": "Entendido. Te quito de la lista y no volveremos a llamarte. Disculpa la molestia y que tengas un buen día.", "time_in_call_secs": 24}, {"role": "user", "message": "Vale. Oye, por curiosidad, ¿en cuánto está el piso ese?", "time_in_call_secs": 29}], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0308.ogg", "duration_seconds": 31}, "metrics": {"turns": 6, "ttft_ms_p50": 992}}, {"event_id": "evt_07", "type": "call.ended", "occurred_at": "2026-09-15T16:10:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0309", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0309"}, "lead": {"contact_id": "c_309", "phone": "+34600000101", "full_name": "Laura Nieto", "lead_source": "idealista", "property_ref": "RIB-2088", "property_address": null, "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0309", "provider_call_id": "0309-telnyx", "dialed_at": "2026-09-15T16:07:03+02:00", "ringing_at": "2026-09-15T16:07:05+02:00", "answered_at": "2026-09-15T16:07:09+02:00", "ended_at": "2026-09-15T16:10:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 171, "amd": {"result": "human", "greeting_transcript": "Sí, soy yo, dime.", "detected_at_secs": 2.0, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Laura?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo, dime.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo por el alquiler de calle de Sorolla, Majadahonda. ¿Lo sigues buscando?", "time_in_call_secs": 9}, {"role": "user", "message": "Sí, sí, lo sigo buscando. ¿Me cuentas cosas del piso?", "time_in_call_secs": 22}, {"role": "agent", "message": "Es un ático dúplex reformado, cuatro dormitorios, tres baños, dos terrazas y plaza de garaje incluida. La urbanización tiene piscina y pistas de pádel.", "time_in_call_secs": 26}, {"role": "user", "message": "Ah, vale, genial. ¿La plaza de garaje está incluida en el precio?", "time_in_call_secs": 44}, {"role": "agent", "message": "Sí, está incluida. No tendrías que pagar nada extra por ella. ¿Alguna otra cosa que quieras saber?", "time_in_call_secs": 49}, {"role": "user", "message": "No, eso sería todo por ahora.", "time_in_call_secs": 62}, {"role": "agent", "message": "Antes de terminar, ¿te gustaría verlo en persona?", "time_in_call_secs": 65}, {"role": "user", "message": "Sí, me viene muy bien verlo.", "time_in_call_secs": 71}, {"role": "agent", "message": "Para la visita, ¿te vendría mejor el jueves por la mañana? Tengo a las 11:00 o a las 12:30.", "time_in_call_secs": 75}, {"role": "user", "message": "El jueves a las once me va perfecto.", "time_in_call_secs": 90}, {"role": "agent", "message": "Te confirmo. La visita queda a nombre de Laura para calle de Sorolla, Majadahonda, el jueves 17 a las 11:00. ¿Te lo dejo reservado así?", "time_in_call_secs": 95}, {"role": "user", "message": "Sí, perfecto. ¿Y dónde es exactamente? ¿Me lo mandáis?", "time_in_call_secs": 110}, {"role": "agent", "message": "Un compañero te confirma la dirección exacta antes de la visita. Ya lo tengo todo anotado. ¿Alguna otra cosa antes de terminar?", "time_in_call_secs": 116}, {"role": "user", "message": "No, eso es todo. Muchas gracias, hasta luego.", "time_in_call_secs": 160}, {"role": "agent", "message": "Venga, pues nada. Un saludo. Hasta luego.", "time_in_call_secs": 164}], "agent_outcome": {"appointment": {"appointment_id": "apt_5512", "start_time": "2026-09-17T11:00:00+02:00"}, "slots_snapshot": {"operacion": "alquiler", "zonas": ["Majadahonda"], "presupuesto": null, "habitaciones": null, "fecha_mudanza": null}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0309.ogg", "duration_seconds": 171}, "metrics": {"turns": 17, "ttft_ms_p50": 993}}, {"event_id": "evt_08", "type": "call.ended", "occurred_at": "2026-09-15T16:42:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0310", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0302"}, "lead": {"contact_id": "c_302", "phone": "+34600000102", "full_name": "Marcos Deval", "lead_source": "fotocasa", "property_ref": "RIB-1904", "property_address": "avenida de Europa 44, Pozuelo de Alarcón", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0310", "provider_call_id": "0310-telnyx", "dialed_at": "2026-09-15T16:40:18+02:00", "ringing_at": "2026-09-15T16:40:20+02:00", "answered_at": "2026-09-15T16:40:24+02:00", "ended_at": "2026-09-15T16:42:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 96, "amd": {"result": "human", "greeting_transcript": "Sí, dime.", "detected_at_secs": 1.6, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Marcos?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, dime.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por la vivienda de avenida de Europa, Pozuelo. ¿Sigues interesado?", "time_in_call_secs": 8}, {"role": "user", "message": "Sí, pero necesito ver la nota simple y el certificado energético antes de nada.", "time_in_call_secs": 22}, {"role": "agent", "message": "Claro. Te puedo mandar ahora mismo un enlace con toda la documentación del inmueble por WhatsApp, a este mismo número. ¿Te va bien?", "time_in_call_secs": 28}, {"role": "user", "message": "Sí, sí, mándamelo por WhatsApp que lo miro esta noche.", "time_in_call_secs": 41}, {"role": "agent", "message": "Hecho, te lo acabo de enviar. Cuando lo revises, dime y seguimos.", "time_in_call_secs": 46}, {"role": "user", "message": "Perfecto. Gracias.", "time_in_call_secs": 58}, {"role": "agent", "message": "A ti. Un saludo.", "time_in_call_secs": 61}], "agent_outcome": {"appointment": null, "slots_snapshot": {"operacion": "compra", "zonas": ["Pozuelo de Alarcón"], "docs_enviadas": true, "canal_consentido": "whatsapp"}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0310.ogg", "duration_seconds": 96}, "metrics": {"turns": 9, "ttft_ms_p50": 985}}, {"event_id": "evt_09", "type": "call.ended", "occurred_at": "2026-09-15T17:05:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0311", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0304"}, "lead": {"contact_id": "c_304", "phone": "+34600000104", "full_name": "Javier Ortín", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0311", "provider_call_id": "0311-telnyx", "dialed_at": "2026-09-15T17:04:27+02:00", "ringing_at": "2026-09-15T17:04:29+02:00", "answered_at": "2026-09-15T17:04:33+02:00", "ended_at": "2026-09-15T17:05:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 27, "amd": {"result": "human", "greeting_transcript": "Sí, soy yo.", "detected_at_secs": 1.7, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Javier?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo por tu consulta sobre la venta de calle Valle de Tormes, Boadilla. ¿Tienes un minuto?", "time_in_call_secs": 8}, {"role": "user", "message": "Uf, ahora estoy en el trabajo. ¿Me puedes llamar mañana a las seis?", "time_in_call_secs": 19}, {"role": "agent", "message": "Claro, sin problema. Lo dejo anotado y te llamamos mañana. Un saludo.", "time_in_call_secs": 24}], "agent_outcome": {"appointment": null, "slots_snapshot": {"callback_when_raw": "mañana a las seis"}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0311.ogg", "duration_seconds": 27}, "metrics": {"turns": 5, "ttft_ms_p50": 986}}, {"event_id": "evt_10", "type": "call.ended", "occurred_at": "2026-09-15T17:30:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0312", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0310"}, "lead": {"contact_id": "c_310", "phone": "+34600000109", "full_name": "Sonia Grao", "lead_source": "idealista", "property_ref": "RIB-2041", "property_address": "calle de Sorolla 8, Majadahonda", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0312", "provider_call_id": "0312-telnyx", "dialed_at": "2026-09-15T17:29:45+02:00", "ringing_at": "2026-09-15T17:29:47+02:00", "answered_at": "2026-09-15T17:29:51+02:00", "ended_at": "2026-09-15T17:30:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "ROOM_DELETED", "hung_up_by": "agent", "duration_seconds": 9, "amd": {"result": "machine-vm", "greeting_transcript": "Hola, ahora mismo no puedo atenderte.", "detected_at_secs": 2.9, "source": "heuristic_regex"}}, "transcript": [{"role": "user", "message": "Hola, ahora mismo no puedo atenderte.", "time_in_call_secs": 4}], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0312.ogg", "duration_seconds": 9}, "metrics": {"turns": 1, "ttft_ms_p50": 987}}, {"event_id": "evt_11", "type": "call.ended", "occurred_at": "2026-09-15T17:50:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0315", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0312"}, "lead": {"contact_id": "c_312", "phone": "+34600000111", "full_name": "Carla Meixide", "lead_source": "fotocasa", "property_ref": "RIB-2041", "property_address": "calle de Sorolla 8, Majadahonda", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0315", "provider_call_id": "0315-telnyx", "dialed_at": "2026-09-15T17:49:08+02:00", "ringing_at": "2026-09-15T17:49:10+02:00", "answered_at": "2026-09-15T17:49:14+02:00", "ended_at": "2026-09-15T17:50:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": null, "duration_seconds": 46, "amd": {"result": "human", "greeting_transcript": "Sí, soy yo.", "detected_at_secs": 1.7, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Carla?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por el alquiler de calle de Sorolla, Majadahonda.", "time_in_call_secs": 8}, {"role": "user", "message": "Sí, justo estaba mirándolo. ¿Se puede ver esta semana?", "time_in_call_secs": 20}, {"role": "agent", "message": "Claro. Tengo hueco el jueves a las 17:00 o el viernes a las 10:00.", "time_in_call_secs": 25}, {"role": "user", "message": "El jueves a las cinco me viene bien.", "time_in_call_secs": 38}, {"role": "agent", "message": "Perfecto, jueves a las 17:00. Déjame que te lo deje apuntado y te…", "time_in_call_secs": 43}], "agent_outcome": {"appointment": null, "slots_snapshot": {"operacion": "alquiler", "zonas": ["Majadahonda"], "visita_acordada_verbal": "2026-09-17T17:00:00+02:00"}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0315.ogg", "duration_seconds": 46}, "metrics": {"turns": 7, "ttft_ms_p50": 990}}, {"event_id": "evt_12", "type": "call.ended", "occurred_at": "2026-09-15T18:15:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0313", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0301"}, "lead": {"contact_id": "c_301", "phone": "+34600000103", "full_name": "Nuria Olalde", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0313", "provider_call_id": "0313-telnyx", "dialed_at": "2026-09-15T18:14:43+02:00", "ringing_at": "2026-09-15T18:14:45+02:00", "answered_at": "2026-09-15T18:14:49+02:00", "ended_at": "2026-09-15T18:15:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "ROOM_DELETED", "hung_up_by": "agent", "duration_seconds": 11, "amd": {"result": "machine-vm", "greeting_transcript": "Ha llamado al número seis cero cero, cero cero cero, uno cero tres. En este momento no está disponible. Deje su mensaje después de la señal.", "detected_at_secs": 7.5, "source": "livekit_amd"}}, "transcript": [{"role": "user", "message": "Ha llamado al número seis cero cero, cero cero cero, uno cero tres. En este momento no está disponible. Deje su mensaje después de la señal.", "time_in_call_secs": 5}], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0313.ogg", "duration_seconds": 11}, "metrics": {"turns": 1, "ttft_ms_p50": 988}}, {"event_id": "evt_13", "type": "call.ended", "occurred_at": "2026-09-15T18:40:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0314", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0311"}, "lead": {"contact_id": "c_311", "phone": "+34600000110", "full_name": "Iván Recalde", "lead_source": "idealista", "property_ref": "RIB-1904", "property_address": "avenida de Europa 44, Pozuelo de Alarcón", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0314", "provider_call_id": "0314-telnyx", "dialed_at": "2026-09-15T18:38:50+02:00", "ringing_at": "2026-09-15T18:38:52+02:00", "answered_at": "2026-09-15T18:38:56+02:00", "ended_at": "2026-09-15T18:40:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 64, "amd": {"result": "human", "greeting_transcript": "Sí, dígame.", "detected_at_secs": 1.7, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Iván?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, dígame.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por la vivienda de avenida de Europa, Pozuelo.", "time_in_call_secs": 8}, {"role": "user", "message": "Sí, quería ver la documentación, la nota simple y eso.", "time_in_call_secs": 19}, {"role": "agent", "message": "Te la mando por WhatsApp a este número y la tienes en un minuto.", "time_in_call_secs": 24}, {"role": "user", "message": "No, por WhatsApp no. Yo el WhatsApp no lo uso para estas cosas. Mándamelo al correo, ivan.recalde@example.com.", "time_in_call_secs": 30}, {"role": "agent", "message": "Perfecto, lo dejo anotado y te la hacemos llegar por correo.", "time_in_call_secs": 48}, {"role": "user", "message": "Eso es. Gracias.", "time_in_call_secs": 55}], "agent_outcome": {"appointment": null, "slots_snapshot": {"operacion": "compra", "canal_consentido": "email", "email_declarado": "ivan.recalde@example.com", "docs_enviadas": false}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0314.ogg", "duration_seconds": 64}, "metrics": {"turns": 8, "ttft_ms_p50": 989}}, {"event_id": "evt_14", "type": "message.received", "occurred_at": "2026-09-16T09:30:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "wa-14", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0302"}, "lead": {"contact_id": "c_302", "phone": "+34600000102", "full_name": "Marcos Deval", "lead_source": "fotocasa", "property_ref": "RIB-1904", "property_address": "avenida de Europa 44, Pozuelo de Alarcón", "language": "es"}, "message": {"channel": "whatsapp", "text": "Buenas, he visto la nota simple. Me encaja, ¿cuándo se puede ver el piso?"}}, {"event_id": "evt_15", "type": "call.ended", "occurred_at": "2026-09-16T09:45:00+02:00", "organization_id": "org_demo_a", "idempotency_key": "lk-out-0311", "delivery_attempt": 2, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0304"}, "lead": {"contact_id": "c_304", "phone": "+34600000104", "full_name": "Javier Ortín", "lead_source": "idealista", "property_ref": "RIB-1180", "property_address": "calle Valle de Tormes 12, Boadilla del Monte", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0311", "provider_call_id": "0311-telnyx", "dialed_at": "2026-09-15T17:04:27+02:00", "ringing_at": "2026-09-15T17:04:29+02:00", "answered_at": "2026-09-15T17:04:33+02:00", "ended_at": "2026-09-15T17:05:00+02:00", "sip_status_code": 200, "sip_status": "OK", "disconnect_reason": "CLIENT_INITIATED", "hung_up_by": "callee", "duration_seconds": 27, "amd": {"result": "human", "greeting_transcript": "Sí, soy yo.", "detected_at_secs": 1.7, "source": "livekit_amd"}}, "transcript": [{"role": "agent", "message": "Hola, muy buenas. ¿Hablo con Javier?", "time_in_call_secs": 2}, {"role": "user", "message": "Sí, soy yo.", "time_in_call_secs": 6}, {"role": "agent", "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo por tu consulta sobre la venta de calle Valle de Tormes, Boadilla. ¿Tienes un minuto?", "time_in_call_secs": 8}, {"role": "user", "message": "Uf, ahora estoy en el trabajo. ¿Me puedes llamar mañana a las seis?", "time_in_call_secs": 19}, {"role": "agent", "message": "Claro, sin problema. Lo dejo anotado y te llamamos mañana. Un saludo.", "time_in_call_secs": 24}], "agent_outcome": {"appointment": null, "slots_snapshot": {"callback_when_raw": "mañana a las seis"}}, "recording": {"gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0311.ogg", "duration_seconds": 27}, "metrics": {"turns": 5, "ttft_ms_p50": 986}}, {"event_id": "evt_16", "type": "call.ended", "occurred_at": "2026-09-16T10:00:00+02:00", "organization_id": "org_demo_b", "idempotency_key": "lk-out-0990", "delivery_attempt": 1, "campaign": {"system_key": "first_touch_voice", "entry_id": "ce_0990"}, "lead": {"contact_id": "c_990", "phone": "+34600000990", "full_name": "Alberto Sanz", "lead_source": "idealista", "property_ref": "OTRA-0001", "property_address": "calle Mayor 1, Getafe", "language": "es"}, "telephony": {"provider": "livekit_sip", "call_id": "lk-out-0990", "provider_call_id": "0990-telnyx", "dialed_at": "2026-09-16T09:59:36+02:00", "ringing_at": "2026-09-16T09:59:38+02:00", "answered_at": null, "ended_at": "2026-09-16T10:00:00+02:00", "sip_status_code": 480, "sip_status": "Temporarily Unavailable", "disconnect_reason": "USER_UNAVAILABLE", "hung_up_by": null, "duration_seconds": 0, "amd": {"result": "not_run", "greeting_transcript": null, "detected_at_secs": null, "source": "none"}}, "transcript": [], "agent_outcome": {"appointment": null, "slots_snapshot": {}}, "recording": null, "metrics": null}];
+let DEC = {}, ORD = {}, RES = null, sel = 0;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const hora = s => s ? new Date(s).toLocaleString("es-ES",
+  {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit",
+   timeZone:"Europe/Madrid"}) : "—";
+
+$("#dir").addEventListener("change", async e => {
+  DEC = {}; ORD = {}; RES = null;
+  for (const f of e.target.files) {
+    const txt = await f.text();
+    const lineas = txt.split("\n").filter(l => l.trim());
+    if (f.name === "decisiones.jsonl") lineas.forEach(l => { const d = JSON.parse(l); DEC[d.event_id] = d; });
+    else if (f.name === "ordenes.jsonl") lineas.forEach(l => { const o = JSON.parse(l);
+      (ORD[o.event_id] = ORD[o.event_id] || []).push(o); });
+    else if (f.name === "resultado.json") RES = JSON.parse(txt);
+  }
+  const n = Object.keys(DEC).length;
+  $("#estado").textContent = n ? `${n} decisiones · ${Object.values(ORD).flat().length} órdenes`
+                               : "no se encontró decisiones.jsonl";
+  pintar();
+});
+
+function evalDe(i) {
+  if (!RES) return null;
+  return RES.eventos.find(e => e.event_id === EVENTOS[i].event_id) || null;
+}
+
+function pintar() {
+  const cola = $("#cola");
+  let html = "";
+  if (RES) {
+    const s = RES.resumen;
+    html += `<div class="marcador">
+      <div><b>${s.ok}/${s.total}</b>eventos</div>
+      <div><b>${s.etiquetas_ok}/${s.total}</b>etiquetas</div>
+      <div><b>${s.ordenes_ok}/${s.ordenes_esperadas}</b>órdenes</div>
+      <div><b>${s.criticos_fallados}</b>críticos fallados</div></div>`;
+  }
+  EVENTOS.forEach((ev, i) => {
+    const d = DEC[ev.event_id], ok = evalDe(i);
+    let pill = "";
+    if (ok) pill = ok.ok ? `<span class="pill ok">ok</span>`
+      : `<span class="pill ${ok.severidad === "critica" ? "crit" : "mal"}">${ok.severidad === "critica" ? "crítico" : "falla"}</span>`;
+    else if (d) pill = `<span class="pill">${esc(d.etiqueta)}</span>`;
+    const nOrd = (ORD[ev.event_id] || []).length;
+    html += `<div class="fila" data-i="${i}" aria-selected="${i === sel}">
+      <div class="n">${String(i + 1).padStart(2, "0")}</div>
+      <div><div class="nom">${esc(ev.lead.full_name || "—")}</div>
+        <div class="meta">${hora(ev.occurred_at)} · ${ev.type === "message.received" ? "WhatsApp entrante"
+          : (ev.telephony?.answered_at ? ev.telephony.duration_seconds + " s" : "sin descuelgue")}
+          ${nOrd ? " · " + nOrd + " órdenes" : ""}</div></div>
+      <div>${pill}</div></div>`;
+  });
+  cola.innerHTML = html;
+  cola.querySelectorAll(".fila").forEach(f =>
+    f.onclick = () => { sel = +f.dataset.i; pintar(); detalle(); });
+  detalle();
+}
+
+function detalle() {
+  const ev = EVENTOS[sel], d = DEC[ev.event_id], ords = ORD[ev.event_id] || [], r = evalDe(sel);
+  let h = `<h2>${esc(ev.lead.full_name || "—")} <span class="sub mono">${esc(ev.event_id)}</span></h2>`;
+
+  if (r && r.nota) h += `<div class="nota"><b>Nota del corrector:</b> ${esc(r.nota)}</div>`;
+
+  h += `<table><tr><th>Tipo</th><td class="mono">${esc(ev.type)}</td></tr>
+    <tr><th>Ocurrió</th><td>${hora(ev.occurred_at)}</td></tr>
+    <tr><th>Organización</th><td class="mono">${esc(ev.organization_id)}</td></tr>
+    <tr><th>Clave idempotencia</th><td class="mono">${esc(ev.idempotency_key)}</td></tr>
+    <tr><th>Inmueble</th><td>${esc(ev.lead.property_ref || "—")} · ${esc(ev.lead.property_address || "dirección no disponible")}</td></tr>`;
+
+  if (ev.telephony) { const t = ev.telephony;
+    h += `<tr><th>SIP</th><td class="mono">${t.sip_status_code} ${esc(t.sip_status || "")}</td></tr>
+      <tr><th>Desconexión</th><td class="mono">${esc(t.disconnect_reason)} · colgó ${esc(t.hung_up_by || "—")}</td></tr>
+      <tr><th>Descuelgue</th><td>${t.answered_at ? hora(t.answered_at) : "nunca"} · ${t.duration_seconds} s</td></tr>
+      <tr><th>Contestador</th><td class="mono">${t.amd ? esc(t.amd.result) + (t.amd.source ? " (" + esc(t.amd.source) + ")" : "") : "(no viene)"}</td></tr>`;
+    if (t.amd && t.amd.greeting_transcript)
+      h += `<tr><th>Saludo oído</th><td><i>«${esc(t.amd.greeting_transcript)}»</i></td></tr>`;
+  }
+  if (ev.agent_outcome) { const a = ev.agent_outcome;
+    if (a.appointment) h += `<tr><th>Cita creada</th><td class="mono">${esc(a.appointment.appointment_id)} · ${hora(a.appointment.start_time)}</td></tr>`;
+    if (a.slots_snapshot && Object.keys(a.slots_snapshot).length)
+      h += `<tr><th>Slots recogidos</th><td class="mono">${esc(JSON.stringify(a.slots_snapshot))}</td></tr>`;
+  }
+  if (ev.message) h += `<tr><th>Mensaje</th><td>«${esc(ev.message.text)}»</td></tr>`;
+  h += `</table>`;
+
+  if (ev.transcript && ev.transcript.length) {
+    h += `<h2>Transcripción</h2>`;
+    ev.transcript.forEach(t => h += `<div class="turno"><div class="seg">${t.time_in_call_secs}s</div>
+      <div class="quien ${t.role === "agent" ? "agente" : ""}">${t.role === "agent" ? "agente" : "lead"}</div>
+      <div>${esc(t.message)}</div></div>`);
+  } else if (ev.type === "call.ended") {
+    h += `<h2>Transcripción</h2><p class="sub">Sin conversación.</p>`;
+  }
+
+  h += `<h2>Decisión</h2>`;
+  h += d ? `<table><tr><th>Etiqueta</th><td class="mono">${esc(d.etiqueta)}${
+      r && r.etiqueta_esperada !== d.etiqueta ? ` <span class="pill mal">esperada: ${esc(r.etiqueta_esperada)}</span>` : ""}</td></tr>
+    <tr><th>Motivo</th><td>${esc(d.motivo)}</td></tr>
+    <tr><th>Confianza</th><td class="mono">${d.confianza}</td></tr></table>`
+    : `<p class="sub">Sin decisión para este evento.${r ? ` Se esperaba <code>${esc(r.etiqueta_esperada)}</code>.` : ""}</p>`;
+
+  h += `<h2>Órdenes</h2>`;
+  if (r) {
+    if (!r.ordenes.length) h += `<p class="sub">No se esperaba ninguna orden${ords.length ? ", y se emitieron " + ords.length : ", y no se emitió ninguna"}.</p>`;
+    r.ordenes.forEach(o => {
+      h += `<div class="orden ${o.ok ? "ok" : "mal"}"><div class="op">${esc(o.operacion)}</div>`;
+      o.motivos.forEach(m => h += `<div class="fallo">${esc(m)}</div>`);
+      if (o.cuerpo_recibido) h += `<pre>${esc(JSON.stringify(o.cuerpo_recibido, null, 1))}</pre>`;
+      h += `</div>`;
+    });
+  } else if (ords.length) {
+    ords.forEach(o => h += `<div class="orden"><div class="op">${esc(o.operacion)}</div>
+      <pre>${esc(JSON.stringify(o.cuerpo, null, 1))}</pre></div>`);
+  } else {
+    h += `<p class="sub">Ninguna.</p>`;
+  }
+  $("#detalle").innerHTML = h;
+}
+pintar();
+</script></body></html>

@@ -1,0 +1,60 @@
+{
+  "event_id": "evt_12",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T18:15:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0313",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0301"
+  },
+  "lead": {
+    "contact_id": "c_301",
+    "phone": "+34600000103",
+    "full_name": "Nuria Olalde",
+    "lead_source": "idealista",
+    "property_ref": "RIB-1180",
+    "property_address": "calle Valle de Tormes 12, Boadilla del Monte",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0313",
+    "provider_call_id": "0313-telnyx",
+    "dialed_at": "2026-09-15T18:14:43+02:00",
+    "ringing_at": "2026-09-15T18:14:45+02:00",
+    "answered_at": "2026-09-15T18:14:49+02:00",
+    "ended_at": "2026-09-15T18:15:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "ROOM_DELETED",
+    "hung_up_by": "agent",
+    "duration_seconds": 11,
+    "amd": {
+      "result": "machine-vm",
+      "greeting_transcript": "Ha llamado al número seis cero cero, cero cero cero, uno cero tres. En este momento no está disponible. Deje su mensaje después de la señal.",
+      "detected_at_secs": 7.5,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "user",
+      "message": "Ha llamado al número seis cero cero, cero cero cero, uno cero tres. En este momento no está disponible. Deje su mensaje después de la señal.",
+      "time_in_call_secs": 5
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0313.ogg",
+    "duration_seconds": 11
+  },
+  "metrics": {
+    "turns": 1,
+    "ttft_ms_p50": 988
+  }
+}

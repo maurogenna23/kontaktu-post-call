@@ -1,0 +1,100 @@
+{
+  "event_id": "evt_13",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T18:40:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0314",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0311"
+  },
+  "lead": {
+    "contact_id": "c_311",
+    "phone": "+34600000110",
+    "full_name": "Iván Recalde",
+    "lead_source": "idealista",
+    "property_ref": "RIB-1904",
+    "property_address": "avenida de Europa 44, Pozuelo de Alarcón",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0314",
+    "provider_call_id": "0314-telnyx",
+    "dialed_at": "2026-09-15T18:38:50+02:00",
+    "ringing_at": "2026-09-15T18:38:52+02:00",
+    "answered_at": "2026-09-15T18:38:56+02:00",
+    "ended_at": "2026-09-15T18:40:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 64,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, dígame.",
+      "detected_at_secs": 1.7,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Iván?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, dígame.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por la vivienda de avenida de Europa, Pozuelo.",
+      "time_in_call_secs": 8
+    },
+    {
+      "role": "user",
+      "message": "Sí, quería ver la documentación, la nota simple y eso.",
+      "time_in_call_secs": 19
+    },
+    {
+      "role": "agent",
+      "message": "Te la mando por WhatsApp a este número y la tienes en un minuto.",
+      "time_in_call_secs": 24
+    },
+    {
+      "role": "user",
+      "message": "No, por WhatsApp no. Yo el WhatsApp no lo uso para estas cosas. Mándamelo al correo, ivan.recalde@example.com.",
+      "time_in_call_secs": 30
+    },
+    {
+      "role": "agent",
+      "message": "Perfecto, lo dejo anotado y te la hacemos llegar por correo.",
+      "time_in_call_secs": 48
+    },
+    {
+      "role": "user",
+      "message": "Eso es. Gracias.",
+      "time_in_call_secs": 55
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {
+      "operacion": "compra",
+      "canal_consentido": "email",
+      "email_declarado": "ivan.recalde@example.com",
+      "docs_enviadas": false
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0314.ogg",
+    "duration_seconds": 64
+  },
+  "metrics": {
+    "turns": 8,
+    "ttft_ms_p50": 989
+  }
+}

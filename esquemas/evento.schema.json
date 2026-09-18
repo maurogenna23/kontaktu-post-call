@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kontaktu.local/reto/evento.schema.json",
+  "title": "Evento de campaña saliente",
+  "type": "object",
+  "required": [
+    "event_id",
+    "type",
+    "occurred_at",
+    "organization_id",
+    "idempotency_key",
+    "campaign",
+    "lead"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Único por entrega. Una reentrega del mismo hecho trae OTRO event_id y la MISMA idempotency_key."
+    },
+    "type": {
+      "enum": [
+        "call.ended",
+        "message.received"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Identifica el hecho, no la entrega. Para call.ended coincide con telephony.call_id."
+    },
+    "campaign": {
+      "type": "object",
+      "required": [
+        "system_key",
+        "entry_id"
+      ],
+      "properties": {
+        "system_key": {
+          "type": "string"
+        },
+        "entry_id": {
+          "type": "string",
+          "description": "Entrada de la cola de primer toque a la que pertenece esta llamada."
+        }
+      }
+    },
+    "lead": {
+      "type": "object",
+      "required": [
+        "contact_id",
+        "phone"
+      ],
+      "properties": {
+        "contact_id": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lead_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "property_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "property_address": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Puede venir a null. Ver caso 1."
+        },
+        "language": {
+          "type": "string"
+        }
+      }
+    },
+    "telephony": {
+      "type": "object",
+      "description": "Solo en call.ended.",
+      "required": [
+        "provider",
+        "call_id",
+        "dialed_at",
+        "ended_at",
+        "sip_status_code",
+        "disconnect_reason",
+        "duration_seconds"
+      ],
+      "properties": {
+        "provider": {
+          "const": "livekit_sip"
+        },
+        "call_id": {
+          "type": "string"
+        },
+        "provider_call_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dialed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ringing_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "answered_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "null si nunca descolgaron."
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sip_status_code": {
+          "type": "integer"
+        },
+        "sip_status": {
+          "type": "string",
+          "description": "Texto del operador. Telnyx añade su propio código al final."
+        },
+        "disconnect_reason": {
+          "enum": [
+            "CLIENT_INITIATED",
+            "USER_REJECTED",
+            "USER_UNAVAILABLE",
+            "SIP_TRUNK_FAILURE",
+            "ROOM_DELETED"
+          ]
+        },
+        "hung_up_by": {
+          "enum": [
+            "callee",
+            "agent",
+            null
+          ]
+        },
+        "duration_seconds": {
+          "type": "integer"
+        },
+        "amd": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "enum": [
+                "human",
+                "machine-vm",
+                "machine-ivr",
+                "machine-unavailable",
+                "uncertain",
+                "not_run"
+              ]
+            },
+            "greeting_transcript": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Lo que se oyó al descolgar. La detección NO devuelve confianza numérica."
+            },
+            "detected_at_secs": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "source": {
+              "enum": [
+                "livekit_amd",
+                "heuristic_regex",
+                "none"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "transcript": {
+      "type": "array",
+      "description": "Solo en call.ended. Lista vacía si no llegó a haber conversación (nadie descolgó, saltó el buzón o colgaron antes de hablar).",
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "message",
+          "time_in_call_secs"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "agent",
+              "user"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "time_in_call_secs": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "agent_outcome": {
+      "type": "object",
+      "description": "Solo en call.ended. Lo que el agente dejó anotado durante la llamada. No trae ningún campo de desenlace: la cita existe solo si el agente la creó, y los slots son notas parciales que pueden faltar, estar a medias o quedarse obsoletas si la conversación siguió después.",
+      "properties": {
+        "appointment": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Presente solo si el agente CREÓ la cita durante la llamada.",
+          "properties": {
+            "appointment_id": {
+              "type": "string"
+            },
+            "start_time": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "slots_snapshot": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Notas sueltas que el agente fue guardando. Ni completas ni obligatorias."
+        }
+      }
+    },
+    "message": {
+      "type": "object",
+      "description": "Solo en message.received.",
+      "required": [
+        "channel",
+        "text"
+      ],
+      "properties": {
+        "channel": {
+          "const": "whatsapp"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "recording": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "metrics": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "delivery_attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1 la primera vez. 2 o más en una reentrega del mismo hecho (misma idempotency_key)."
+    }
+  }
+}

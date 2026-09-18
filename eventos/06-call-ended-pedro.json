@@ -1,0 +1,85 @@
+{
+  "event_id": "evt_06",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T12:55:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0308",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0308"
+  },
+  "lead": {
+    "contact_id": "c_308",
+    "phone": "+34600000108",
+    "full_name": "Pedro Lasa",
+    "lead_source": "idealista",
+    "property_ref": "RIB-1180",
+    "property_address": "calle Valle de Tormes 12, Boadilla del Monte",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0308",
+    "provider_call_id": "0308-telnyx",
+    "dialed_at": "2026-09-15T12:54:23+02:00",
+    "ringing_at": "2026-09-15T12:54:25+02:00",
+    "answered_at": "2026-09-15T12:54:29+02:00",
+    "ended_at": "2026-09-15T12:55:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": "callee",
+    "duration_seconds": 31,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, soy yo.",
+      "detected_at_secs": 1.7,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Pedro?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, soy yo.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. Te aviso de que esta llamada se graba por calidad. Te llamo porque nos ha llegado tu consulta en Idealista sobre la venta de calle Valle de Tormes, Boadilla del Monte. ¿Todavía te interesa?",
+      "time_in_call_secs": 9
+    },
+    {
+      "role": "user",
+      "message": "Mira, prefiero que no me llaméis más. Dadme de baja, por favor.",
+      "time_in_call_secs": 20
+    },
+    {
+      "role": "agent",
+      "message": "Entendido. Te quito de la lista y no volveremos a llamarte. Disculpa la molestia y que tengas un buen día.",
+      "time_in_call_secs": 24
+    },
+    {
+      "role": "user",
+      "message": "Vale. Oye, por curiosidad, ¿en cuánto está el piso ese?",
+      "time_in_call_secs": 29
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {}
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0308.ogg",
+    "duration_seconds": 31
+  },
+  "metrics": {
+    "turns": 6,
+    "ttft_ms_p50": 992
+  }
+}

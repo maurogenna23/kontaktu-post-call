@@ -1,0 +1,96 @@
+{
+  "event_id": "evt_11",
+  "type": "call.ended",
+  "occurred_at": "2026-09-15T17:50:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "lk-out-0315",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0312"
+  },
+  "lead": {
+    "contact_id": "c_312",
+    "phone": "+34600000111",
+    "full_name": "Carla Meixide",
+    "lead_source": "fotocasa",
+    "property_ref": "RIB-2041",
+    "property_address": "calle de Sorolla 8, Majadahonda",
+    "language": "es"
+  },
+  "telephony": {
+    "provider": "livekit_sip",
+    "call_id": "lk-out-0315",
+    "provider_call_id": "0315-telnyx",
+    "dialed_at": "2026-09-15T17:49:08+02:00",
+    "ringing_at": "2026-09-15T17:49:10+02:00",
+    "answered_at": "2026-09-15T17:49:14+02:00",
+    "ended_at": "2026-09-15T17:50:00+02:00",
+    "sip_status_code": 200,
+    "sip_status": "OK",
+    "disconnect_reason": "CLIENT_INITIATED",
+    "hung_up_by": null,
+    "duration_seconds": 46,
+    "amd": {
+      "result": "human",
+      "greeting_transcript": "Sí, soy yo.",
+      "detected_at_secs": 1.7,
+      "source": "livekit_amd"
+    }
+  },
+  "transcript": [
+    {
+      "role": "agent",
+      "message": "Hola, muy buenas. ¿Hablo con Carla?",
+      "time_in_call_secs": 2
+    },
+    {
+      "role": "user",
+      "message": "Sí, soy yo.",
+      "time_in_call_secs": 6
+    },
+    {
+      "role": "agent",
+      "message": "Soy Marta, la asistente virtual de Ribera Inmobiliaria. La llamada se graba por calidad. Te llamo por el alquiler de calle de Sorolla, Majadahonda.",
+      "time_in_call_secs": 8
+    },
+    {
+      "role": "user",
+      "message": "Sí, justo estaba mirándolo. ¿Se puede ver esta semana?",
+      "time_in_call_secs": 20
+    },
+    {
+      "role": "agent",
+      "message": "Claro. Tengo hueco el jueves a las 17:00 o el viernes a las 10:00.",
+      "time_in_call_secs": 25
+    },
+    {
+      "role": "user",
+      "message": "El jueves a las cinco me viene bien.",
+      "time_in_call_secs": 38
+    },
+    {
+      "role": "agent",
+      "message": "Perfecto, jueves a las 17:00. Déjame que te lo deje apuntado y te…",
+      "time_in_call_secs": 43
+    }
+  ],
+  "agent_outcome": {
+    "appointment": null,
+    "slots_snapshot": {
+      "operacion": "alquiler",
+      "zonas": [
+        "Majadahonda"
+      ],
+      "visita_acordada_verbal": "2026-09-17T17:00:00+02:00"
+    }
+  },
+  "recording": {
+    "gcs_path": "gs://kontaktu-demo/org_demo_a/2026-09/lk-out-0315.ogg",
+    "duration_seconds": 46
+  },
+  "metrics": {
+    "turns": 7,
+    "ttft_ms_p50": 990
+  }
+}

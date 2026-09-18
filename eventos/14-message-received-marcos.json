@@ -1,0 +1,25 @@
+{
+  "event_id": "evt_14",
+  "type": "message.received",
+  "occurred_at": "2026-09-16T09:30:00+02:00",
+  "organization_id": "org_demo_a",
+  "idempotency_key": "wa-14",
+  "delivery_attempt": 1,
+  "campaign": {
+    "system_key": "first_touch_voice",
+    "entry_id": "ce_0302"
+  },
+  "lead": {
+    "contact_id": "c_302",
+    "phone": "+34600000102",
+    "full_name": "Marcos Deval",
+    "lead_source": "fotocasa",
+    "property_ref": "RIB-1904",
+    "property_address": "avenida de Europa 44, Pozuelo de Alarcón",
+    "language": "es"
+  },
+  "message": {
+    "channel": "whatsapp",
+    "text": "Buenas, he visto la nota simple. Me encaja, ¿cuándo se puede ver el piso?"
+  }
+}
