@@ -35,13 +35,16 @@ _MODELOS_EN_ESTADO = (
 def procesar(ruta_evento: Path, raiz: Path = RAIZ) -> LineaDecision:
     entrada = cargar_evento(ruta_evento)
     campana = cargar_campana(raiz / "config" / "campana.yaml")
+    # salida/ y estado/ van en la raíz del repo. ORQUESTADOR_DATOS permite llevarlos a otra carpeta
+    # (lo usa scripts/verificar_lote.py para correr cada lote desde cero sin tocar salida/).
+    datos = Path(os.getenv("ORQUESTADOR_DATOS") or raiz)
     dependencias = Dependencias(
         campana=campana,
         clasificador=_clasificador_perezoso(os.getenv("MODELO") or MODELO_POR_DEFECTO, campana),
-        salida=Salida(raiz / "salida"),
+        salida=Salida(datos / "salida"),
     )
-    (raiz / "estado").mkdir(exist_ok=True)
-    base = str(raiz / "estado" / "orquestador.sqlite")
+    (datos / "estado").mkdir(parents=True, exist_ok=True)
+    base = str(datos / "estado" / "orquestador.sqlite")
     serializador = JsonPlusSerializer(
         allowed_msgpack_modules=[(modelo.__module__, modelo.__name__) for modelo in _MODELOS_EN_ESTADO]
     )
