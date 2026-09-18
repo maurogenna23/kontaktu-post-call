@@ -17,11 +17,12 @@ from typing import Any, Literal, TypedDict
 
 from langgraph.errors import NodeError
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer, Command, RetryPolicy
 
-from orquestador.catalogo import Clasificacion, DatosConversacion
+from orquestador.catalogo import Clasificacion, DatosConversacion, Etiqueta
 from orquestador.clasificador import (
     Clasificador,
     es_error_de_configuracion,
@@ -157,7 +158,9 @@ def emitir(estado: Estado, *, runtime: Runtime[Dependencias]) -> dict[str, Any]:
     return {"decision": decision}
 
 
-def construir_grafo(checkpointer: Checkpointer, store: BaseStore) -> Any:
+def construir_grafo(
+    checkpointer: Checkpointer, store: BaseStore
+) -> CompiledStateGraph[Estado, Dependencias, Estado, Estado]:
     grafo = StateGraph(Estado, context_schema=Dependencias)
     grafo.add_node("admitir", admitir)
     grafo.add_node("atender_mensaje", atender_mensaje)
@@ -178,7 +181,7 @@ def construir_grafo(checkpointer: Checkpointer, store: BaseStore) -> Any:
     return grafo.compile(checkpointer=checkpointer, store=store)
 
 
-def _sin_ordenes(etiqueta: Any, motivo: str, confianza: float) -> dict[str, Any]:
+def _sin_ordenes(etiqueta: Etiqueta, motivo: str, confianza: float) -> dict[str, Any]:
     clasificacion = Clasificacion(etiqueta=etiqueta, motivo=motivo, confianza=confianza)
     return {"clasificacion": clasificacion, "ordenes": [], "memoria": None}
 

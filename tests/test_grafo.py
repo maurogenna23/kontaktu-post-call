@@ -7,7 +7,7 @@ nada, y que un fallo del modelo termine en el error_handler y el evento se proce
 import json
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import httpx2
 import openai
@@ -66,7 +66,8 @@ class Sistema:
             stream_mode="updates",
             version="v2",
         )
-        return [nodo for parte in partes for nodo in parte["data"]]
+        # Con stream_mode="updates", cada parte es {nodo: lo que devolvió}.
+        return [nodo for parte in partes for nodo in cast(dict[str, Any], parte["data"])]
 
     def decision(self, event_id: str) -> dict[str, Any]:
         return next(linea for linea in self._leer("decisiones.jsonl") if linea["event_id"] == event_id)

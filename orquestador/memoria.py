@@ -18,7 +18,8 @@ class RecordatorioPendiente(BaseModel):
 
 
 class MemoriaLead(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    # extra="forbid": un campo mal escrito al actualizarla falla en vez de perderse en silencio.
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     intentos: int = 0
     llamadas_cortadas: int = 0

@@ -8,10 +8,10 @@ import json
 from collections.abc import Callable
 from datetime import date, time
 from pathlib import Path
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 import openai
-from langchain.chat_models import init_chat_model
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict
 
 from orquestador.calendario import describir, en_zona
@@ -20,6 +20,14 @@ from orquestador.config import Campana
 from orquestador.evento import Evento, Turno
 
 PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
+
+# Parámetros probados para cada modelo (ver scripts/comparar_modelos.py). Un modelo que no está aquí
+# usa los valores por defecto de OpenAI: mandarle `temperature` o `reasoning_effort` a ciegas puede
+# hacer que rechace todas las peticiones.
+_OPCIONES_POR_MODELO: dict[str, dict[str, Any]] = {
+    "gpt-5.6-luna": {"reasoning_effort": "low"},
+    "gpt-4o-mini": {"temperature": 0},
+}
 
 _TRANSITORIOS = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError)
 _DE_CONFIGURACION = (openai.AuthenticationError, openai.PermissionDeniedError, openai.NotFoundError)
@@ -67,6 +75,7 @@ class SalidaModelo(BaseModel):
     etiqueta: EtiquetaConversacion
     motivo: str
     confianza: float
+    # No se emite: pedir la frase literal obliga al modelo a anclar la etiqueta en la transcripción.
     evidencia: str
     callback_fecha: str | None
     callback_hora: str | None
@@ -84,10 +93,7 @@ class ClasificadorLLM:
 
     def __init__(self, modelo: str, campana: Campana) -> None:
         # Sin reintentos en el cliente: los reintentos los decide la RetryPolicy del nodo.
-        if modelo.startswith("gpt-5"):  # modelos de razonamiento
-            llm = init_chat_model(f"openai:{modelo}", timeout=30, max_retries=0, reasoning_effort="low")
-        else:
-            llm = init_chat_model(f"openai:{modelo}", timeout=30, max_retries=0, temperature=0)
+        llm = ChatOpenAI(model=modelo, timeout=30, max_retries=0, **_OPCIONES_POR_MODELO.get(modelo, {}))
         self._modelo = llm.with_structured_output(SalidaModelo)
         self._campana = campana
         self._sistema = (PROMPTS / "clasificar_llamada.md").read_text(encoding="utf-8")

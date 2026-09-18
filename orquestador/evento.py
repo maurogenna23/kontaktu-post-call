@@ -1,4 +1,8 @@
-"""Evento de entrada (esquemas/evento.schema.json), validado en el borde del sistema."""
+"""Evento de entrada (esquemas/evento.schema.json), validado en el borde del sistema.
+
+Solo se modelan los campos que el sistema usa: validar con tipos cerrados un campo que nunca se
+lee solo añadiría formas de rechazar un evento válido.
+"""
 
 import json
 from pathlib import Path
@@ -14,7 +18,6 @@ class _Entrada(BaseModel):
 
 
 class Campania(_Entrada):
-    system_key: str
     entry_id: str
 
 
@@ -30,19 +33,15 @@ class Amd(_Entrada):
     result: Literal["human", "machine-vm", "machine-ivr", "machine-unavailable", "uncertain", "not_run"] = (
         "not_run"
     )
-    greeting_transcript: str | None = None
     source: Literal["livekit_amd", "heuristic_regex", "none"] = "none"
 
 
 class Telefonia(_Entrada):
     call_id: str
-    answered_at: AwareDatetime | None = None
-    ended_at: AwareDatetime
     sip_status_code: int
     sip_status: str = ""
-    disconnect_reason: Literal[
-        "CLIENT_INITIATED", "USER_REJECTED", "USER_UNAVAILABLE", "SIP_TRUNK_FAILURE", "ROOM_DELETED"
-    ]
+    # disconnect_reason no se usa a propósito: LiveKit mete el 486 en USER_REJECTED aunque no sea
+    # un rechazo del lead. Manda sip_status_code.
     hung_up_by: Literal["callee", "agent"] | None = None
     duration_seconds: int
     amd: Amd = Field(default_factory=Amd)
@@ -75,7 +74,6 @@ class Evento(_Entrada):
     occurred_at: AwareDatetime
     organization_id: str
     idempotency_key: str
-    delivery_attempt: int = 1
     campaign: Campania
     lead: Lead
     telephony: Telefonia | None = None

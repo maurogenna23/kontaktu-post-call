@@ -1,4 +1,9 @@
-"""Configuración de la campaña (config/campana.yaml), validada al cargarla."""
+"""Configuración de la campaña (config/campana.yaml), validada al cargarla.
+
+Solo se modelan las claves que se usan. cortada_horas_max no: la cortada se programa a los
+cortada_minutos_min dentro de la ventana, así que solo lo superaría con la ventana cerrada, y ahí
+no hay alternativa mejor que la primera franja válida (ver reglas.py).
+"""
 
 from datetime import time
 from pathlib import Path
@@ -16,7 +21,6 @@ class _Seccion(BaseModel):
 
 
 class DatosCampana(_Seccion):
-    system_key: str
     organization_id: str
     zona_horaria: str
 
@@ -27,7 +31,6 @@ class Reintentos(_Seccion):
     ocupado_minutos_min: int
     ocupado_minutos_max: int
     cortada_minutos_min: int
-    cortada_horas_max: int
 
 
 class Recordatorios(_Seccion):

@@ -7,6 +7,7 @@ casos.md: los casos 4, 5, 6, 11 y 13 salen de `sip_status_code` y `amd`. Un `5xx
 from orquestador.catalogo import Clasificacion
 from orquestador.evento import Telefonia
 
+_CONTESTADA, _COMUNICA, _RECHAZO_ACTIVO = 200, 486, 603
 _SIN_RESPUESTA = frozenset({408, 480})
 _BUZON = frozenset({"machine-vm", "machine-unavailable"})
 
@@ -20,11 +21,11 @@ _CONFIANZA_HEURISTICA = 0.7
 def clasificar_por_senalizacion(telefonia: Telefonia, hay_conversacion: bool) -> Clasificacion | None:
     """La clasificación si la telefonía la decide; None si atendió una persona y hay que leer."""
     codigo, texto = telefonia.sip_status_code, telefonia.sip_status
-    if codigo == 486:
+    if codigo == _COMUNICA:
         return Clasificacion(
             etiqueta="ocupado", motivo=f"486 {texto}: la línea comunica", confianza=_CONFIANZA_SIP
         )
-    if codigo == 603:
+    if codigo == _RECHAZO_ACTIVO:
         return Clasificacion(
             etiqueta="rechazada",
             motivo=f"603 {texto}: rechazo activo antes de descolgar",
@@ -40,7 +41,7 @@ def clasificar_por_senalizacion(telefonia: Telefonia, hay_conversacion: bool) ->
             motivo=f"{codigo} {texto}: fallo del trunk antes de conectar",
             confianza=_CONFIANZA_SIP,
         )
-    if codigo != 200:
+    if codigo != _CONTESTADA:
         return Clasificacion(
             etiqueta="otro", motivo=f"código SIP {codigo} sin caso en el catálogo", confianza=_CONFIANZA_SIP
         )

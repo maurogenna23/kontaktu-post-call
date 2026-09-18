@@ -4,6 +4,8 @@ Funciones puras: reciben el evento, su clasificación, la memoria del lead y la 
 devuelven las órdenes y la memoria actualizada. No escriben nada ni conocen LangGraph.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -161,7 +163,7 @@ def decidir_mensaje(evento: Evento, memoria: MemoriaLead, campana: Campana) -> P
     return plan.resultado()
 
 
-def _visita_reservada(plan: "_Planificador", evento: Evento, campana: Campana) -> None:
+def _visita_reservada(plan: _Planificador, evento: Evento, campana: Campana) -> None:
     cita = evento.agent_outcome.appointment
     if cita is None:
         raise ValueError("visita_reservada requiere agent_outcome.appointment")
@@ -180,7 +182,7 @@ def _visita_reservada(plan: "_Planificador", evento: Evento, campana: Campana) -
     plan.tarea("confirmar_visita_direccion", "Confirmar la dirección de la visita", detalle, vence)
 
 
-def _documentacion_enviada(plan: "_Planificador", evento: Evento, campana: Campana) -> None:
+def _documentacion_enviada(plan: _Planificador, evento: Evento, campana: Campana) -> None:
     ocurrio, recordatorios = evento.occurred_at, campana.recordatorios
     if plan.whatsapp_permitido:
         # Decisión: las 48 horas son un mínimo y el mensaje al lead sale dentro de la ventana (R3):
@@ -200,7 +202,7 @@ def _documentacion_enviada(plan: "_Planificador", evento: Evento, campana: Campa
     )
 
 
-def _callback(plan: "_Planificador", evento: Evento, datos: DatosConversacion, campana: Campana) -> None:
+def _callback(plan: _Planificador, evento: Evento, datos: DatosConversacion, campana: Campana) -> None:
     pedido = _instante_pedido(datos, campana)
     if pedido is None or pedido <= evento.occurred_at:
         # Decisión: sin una hora concreta (o con una ya pasada) se usa la separación general.
@@ -239,7 +241,7 @@ class _Planificador:
         return Plan(ordenes=list(self._ordenes), memoria=self.memoria)
 
     def recordar(self, **cambios: object) -> None:
-        self.memoria = self.memoria.model_copy(update=cambios)
+        self.memoria = MemoriaLead.model_validate({**self.memoria.model_dump(), **cambios})
 
     @property
     def whatsapp_permitido(self) -> bool:

@@ -10,6 +10,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from orquestador.config import Campana
 
 _DIAS_A_EXPLORAR = 8  # una semana completa más el día de partida
+_NOMBRES_DIA = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 
 
 def en_zona(instante: datetime, campana: Campana) -> datetime:
@@ -62,9 +63,6 @@ def primer_instante_valido(desde: datetime, campana: Campana) -> datetime:
 def formatear(instante: datetime, campana: Campana) -> str:
     """ISO 8601 con el offset de Madrid, como en el ejemplo resuelto: 2026-09-15T11:31:00+02:00."""
     return en_zona(instante, campana).isoformat(timespec="seconds")
-
-
-_NOMBRES_DIA = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
 
 
 def describir(instante: datetime, campana: Campana) -> str:

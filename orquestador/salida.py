@@ -23,6 +23,8 @@ class LineaDecision(BaseModel):
 
 
 class Salida:
+    """Los dos ficheros de salida del contrato, en el directorio indicado."""
+
     def __init__(self, directorio: Path) -> None:
         self._decisiones = directorio / "decisiones.jsonl"
         self._ordenes = directorio / "ordenes.jsonl"
