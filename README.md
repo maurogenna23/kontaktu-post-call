@@ -26,7 +26,8 @@ admitir ─┬─ otra organización o reentrega ──────────�
 
 - **La telefonía decide lo que puede** (486, 603, 408/480, 5xx, buzón, IVR) sin el modelo. El LLM solo
   lee conversaciones con una persona, con salida estructurada estricta; los prompts están en `prompts/`.
-  Fechas y plazos los calcula el código.
+  El modelo solo interpreta la hora que pide el lead («mañana a las seis» → 16/09 18:00); plazos,
+  ventana, días hábiles y zona horaria los calcula el código.
 - **Las reglas son funciones puras** (`reglas.py`, `calendario.py`, `senalizacion.py`); los nodos solo
   las llaman y solo `emitir` tiene efectos.
 - **Persistencia:** un **checkpointer** SQLite con `thread_id = idempotency_key`, donde una reentrega cae en un
@@ -54,7 +55,8 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 - **Ocupado** a los 60 minutos (mitad de 30–90), como el ejemplo resuelto. **Cortada y visita sin
   confirmar** a los 30, o en la primera franja válida si la ventana cerró; la visita no se reserva (N5).
-- **Callback** a la hora pedida; fuera de ventana, en la primera franja válida con `aviso_cambio_hora`.
+- **Callback** a la hora pedida, que interpreta el modelo porque es lenguaje libre («el lunes a las once»,
+  «vuelve a las ocho»); fuera de ventana, en la primera franja válida con `aviso_cambio_hora`.
 - **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, WhatsApp de
   respaldo una vez, o `revisar_llamada` si el lead rechazó WhatsApp.
 - **Recordatorios:** el WhatsApp al lead sale tras 48 horas como mínimo y dentro de la ventana. Al

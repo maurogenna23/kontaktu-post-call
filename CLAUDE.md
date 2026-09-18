@@ -26,7 +26,8 @@ así que se implementa lo que dice la especificación, no lo que pasa con los 16
 - Los modelos Pydantic que se guardan en el checkpoint se registran en el serializador
   (`allowed_msgpack_modules`); si aparece el aviso "Deserializing unregistered type", falta uno.
 - El LLM solo clasifica conversaciones con una persona. Lo que resuelve la señalización (SIP, `amd`)
-  se decide en código. Las fechas las calcula el código, nunca el modelo.
+  se decide en código. El modelo solo interpreta la hora que pide el lead (callback); plazos, ventana,
+  días hábiles y zona horaria los calcula el código.
 - Los prompts viven solo en `prompts/`, como archivos. El modelo sale de `MODELO` en `.env`.
 - `orden_id` = `ord_` + 8 primeros caracteres del SHA-1 de su `idempotency_key` (así lo hace el
   ejemplo resuelto).
