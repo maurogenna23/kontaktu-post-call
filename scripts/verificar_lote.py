@@ -333,7 +333,8 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         sintetico(30, "08-call-ended-marcos.json", "c_s30", "2026-09-15T16:42:00"),
         sintetico(31, "06-call-ended-pedro.json", "c_s30", "2026-09-16T11:00:00"),
         sintetico(32, "14-message-received-marcos.json", "c_s30", "2026-09-16T12:00:00"),
-        # R3: documentación el viernes → el recordatorio al lead cae el lunes, no el domingo.
+        # Documentación el viernes → el recordatorio al lead, a las 48 horas exactas (domingo 16:42): la
+        # ventana es de llamadas; el OpenAPI no se la exige a programar_recordatorio.cuando.
         sintetico(33, "08-call-ended-marcos.json", "c_s33", "2026-09-18T16:42:00"),
         # Reentrega de un WhatsApp: repite no_aplica sin órdenes.
         sintetico(34, "14-message-received-marcos.json", "c_s28", "2026-09-18T10:05:00", hecho=29),
@@ -485,7 +486,7 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_33": Esperado(
             "documentacion_enviada",
             [CERRAR, RECORDATORIO, RECORDATORIO],
-            {"programar_recordatorio.cuando": ["2026-09-21T10:00:00+02:00", "2026-09-23T16:42:00+02:00"]},
+            {"programar_recordatorio.cuando": ["2026-09-20T16:42:00+02:00", "2026-09-23T16:42:00+02:00"]},
         ),
         "sint_34": Esperado("no_aplica", []),
         "sint_35": Esperado("sin_respuesta", [CERRAR, LLAMAR]),

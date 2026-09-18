@@ -62,8 +62,9 @@ Cada una lleva un comentario `Decisión:` en el código.
   próxima vez que llega. Si cae en otra hora, u otro día si no dio hora, `aviso_cambio_hora`.
 - **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, el respaldo se
   resuelve una vez por lead: WhatsApp o, si lo rechazó, una tarea para decidir cómo seguir.
-- **Recordatorios:** el WhatsApp al lead sale tras 48 horas como mínimo y dentro de la ventana. Al
-  responder el lead solo se cancelan los que aún no salieron.
+- **Recordatorios:** el WhatsApp al lead sale a las 48 horas exactas, aunque caiga en domingo: el
+  OpenAPI exige la ventana solo a `programar_llamada`. Al responder el lead solo se cancelan los que
+  aún no salieron.
 - **Baja:** manda sobre cualquier etiqueta y cancela los recordatorios pendientes; después, cada
   evento del lead solo cierra la llamada.
 - **La cita del CRM manda sobre el modelo**, salvo una baja; sin cita, una visita nunca está reservada.

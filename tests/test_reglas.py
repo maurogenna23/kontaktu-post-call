@@ -158,14 +158,17 @@ def test_solo_se_cancelan_los_recordatorios_que_aun_no_salieron(campana: Campana
     assert respuesta.memoria.recordatorios_pendientes == ()
 
 
-def test_el_recordatorio_al_lead_sale_dentro_de_la_ventana(campana: Campana) -> None:
-    # viernes 16:42 + 48 h = domingo 16:42, sin franja → lunes a las 10:00
+def test_el_recordatorio_al_lead_sale_a_las_48_horas_aunque_caiga_fuera_de_la_ventana(
+    campana: Campana,
+) -> None:
+    # viernes 16:42 + 48 h = domingo 16:42: la ventana es de llamadas (el OpenAPI solo la exige a
+    # programar_llamada.no_antes_de). El del comercial, a 3 días hábiles: el miércoles.
     plan = documentacion("2026-09-18T16:42:00+02:00", campana)
     cuandos = {
         o.cuerpo["canal"]: o.cuerpo["cuando"] for o in plan.ordenes if o.operacion == "programar_recordatorio"
     }
     assert cuandos == {
-        "whatsapp_lead": "2026-09-21T10:00:00+02:00",
+        "whatsapp_lead": "2026-09-20T16:42:00+02:00",
         "tarea_comercial": "2026-09-23T16:42:00+02:00",
     }
 

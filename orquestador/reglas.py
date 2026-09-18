@@ -195,13 +195,22 @@ def _visita_reservada(plan: _Planificador, evento: Evento, campana: Campana) -> 
 def _documentacion_enviada(plan: _Planificador, evento: Evento, campana: Campana) -> None:
     ocurrio, recordatorios = evento.occurred_at, campana.recordatorios
     if plan.whatsapp_permitido:
-        # Decisión: las 48 horas son un mínimo y el mensaje al lead sale dentro de la ventana (R3):
-        # documentación el viernes por la tarde → recordatorio el lunes a las 10:00, no el domingo.
-        plazo = timedelta(hours=recordatorios.documentacion_lead_horas)
+        # Decisión (revisada: una versión anterior lo ajustaba a la ventana de llamadas): el recordatorio
+        # al lead sale a las 48 horas exactas, aunque caiga fuera de la ventana. Documentación el
+        # viernes a las 16:42 → domingo a las 16:42.
+        # - El OpenAPI escribe la restricción de la ventana solo para programar_llamada.no_antes_de
+        #   («Tiene que caer dentro de la ventana de llamadas»); programar_recordatorio.cuando es un
+        #   date-time sin restricción.
+        # - Apoyo: campana.yaml define la ventana como las franjas «en las que se puede llamar» y
+        #   cuenta las 48 horas como naturales.
+        # - Contraargumento: casos.md exime de forma explícita a las tareas («vence_el es a cualquier
+        #   hora del día») y no dice nada de los recordatorios, así que se puede leer que R3 («respetan
+        #   la ventana de llamadas») les aplica. No es un caso cerrado; es la lectura más sólida,
+        #   porque la ventana es de llamadas y el contrato del CRM solo la exige a las llamadas.
         plan.recordatorio(
             "whatsapp_lead",
             "lead",
-            primer_instante_valido(sumar(ocurrio, plazo, campana), campana),
+            sumar(ocurrio, timedelta(hours=recordatorios.documentacion_lead_horas), campana),
             plantilla="recordatorio_documentacion",
         )
     plan.recordatorio(
