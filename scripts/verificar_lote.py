@@ -489,7 +489,11 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_34": Esperado("no_aplica", []),
         "sint_35": Esperado("sin_respuesta", [CERRAR, LLAMAR]),
         "sint_36": Esperado("ocupado", [CERRAR, LLAMAR]),
-        "sint_37": Esperado("callback", [CERRAR, WHATSAPP], {PLANTILLA: "primer_toque_respaldo"}),
+        "sint_37": Esperado(
+            "callback",
+            [CERRAR, WHATSAPP],
+            {PLANTILLA: "primer_toque_respaldo", "cerrar_llamada.status": "callback_requested"},
+        ),
         "sint_38": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-10-26T10:00:00+01:00"}),
         "sint_39": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T20:00:00+02:00"}),
         "sint_40": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T19:40:00+02:00"}),

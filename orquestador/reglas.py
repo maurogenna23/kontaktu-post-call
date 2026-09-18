@@ -295,6 +295,13 @@ class _Planificador:
     def llamar(self, desde: datetime, motivo: str, nota: str | None) -> datetime | None:
         """Programa otra llamada en la ventana. N3: con los intentos agotados, canal de respaldo."""
         campana = self._campana
+        # Decisión: el tope frena toda llamada nueva, también un callback, una cortada o una visita sin
+        # confirmar: en el tercer call.ended sale el respaldo, no otra llamada.
+        # - N3 no hace excepciones («agotados los intentos de voz, el canal de respaldo») y
+        #   campana.yaml fija el máximo «por lead, contando el primero», no por racha sin contacto.
+        # - Contraargumento: el lead que en el tercer intento pide «llámame el lunes» no recibe esa
+        #   llamada. El pedido no se pierde: cerrar_llamada sale con status callback_requested y el
+        #   motivo, así que queda registrado en el CRM.
         if self.memoria.intentos >= campana.reintentos.max_intentos:
             self.respaldo(
                 f"intentos de voz agotados ({self.memoria.intentos} de {campana.reintentos.max_intentos})"

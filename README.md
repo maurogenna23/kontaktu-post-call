@@ -60,7 +60,8 @@ Cada una lleva un comentario `Decisión:` en el código.
 - **Callback** a lo que pidió el lead, que interpreta el modelo porque es lenguaje libre. Día sin hora: la
   apertura de la ventana ese día; franja: su comienzo (tarde, 16:00); hora sin fecha o ya pasada: la
   próxima vez que llega. Si cae en otra hora, u otro día si no dio hora, `aviso_cambio_hora`.
-- **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, el respaldo se
+- **Intentos:** el máximo es por lead y N3 no hace excepciones: agotado, tampoco se programa un
+  callback (el pedido queda en el CRM: `cerrar_llamada` con `callback_requested`). El respaldo se
   resuelve una vez por lead: WhatsApp o, si lo rechazó, una tarea para decidir cómo seguir.
 - **Recordatorios:** el WhatsApp al lead sale a las 48 horas exactas, aunque caiga en domingo: el
   OpenAPI exige la ventana solo a `programar_llamada`. Al responder el lead solo se cancelan los que
