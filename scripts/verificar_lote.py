@@ -340,6 +340,23 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         sintetico(37, "09-call-ended-javier.json", "c_s35", "2026-09-15T17:05:00"),
         # Cambio de hora: sábado 24 de octubre a las 12:30 + 2 h → fuera de franja → lunes 26 con +01:00.
         sintetico(38, "01-call-ended-nuria.json", "c_s38", "2026-10-24T12:30:00"),
+        # Contesta otra persona pero dice cuándo localizar al lead: callback, no persona_equivocada.
+        # A las 20:00, el extremo de la ventana, que es inclusivo.
+        sintetico(
+            39,
+            "03-call-ended-elena.json",
+            "c_s39",
+            "2026-09-15T17:00:00",
+            {
+                "transcript": _turnos(
+                    "Hola, buenas. ¿Hablo con Elena? Te llamo de parte de Ribera Inmobiliaria.",
+                    "No, soy su marido. Elena ahora no está, vuelve a las ocho.",
+                    "Vale, ¿le podemos llamar entonces?",
+                    "Sí, llamadla a las ocho, que ya estará en casa.",
+                    "Perfecto, la llamamos a las ocho. Gracias.",
+                ),
+            },
+        ),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -393,6 +410,7 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_36": Esperado("ocupado", [CERRAR, LLAMAR]),
         "sint_37": Esperado("callback", [CERRAR, WHATSAPP], {PLANTILLA: "primer_toque_respaldo"}),
         "sint_38": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-10-26T10:00:00+01:00"}),
+        "sint_39": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T20:00:00+02:00"}),
     }
     return eventos, esperado
 

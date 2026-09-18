@@ -32,8 +32,12 @@ Elige exactamente una:
   pedir que le llamen en otro momento no es `callback`.
 - `cortada` y `visita_sin_confirmar` se diferencian en si llegó a acordarse una visita, no en cómo
   se cortó.
+- La telefonía no distingue un corte de un cuelgue normal: una caída de línea llega como si hubiera
+  colgado el lead. El corte se ve en la transcripción: una frase a medias y nadie se despide.
 - Un lead que ya había dicho que no busca y cuelga seco es `descartado`, no `cortada`.
 - Un número equivocado no es una baja: es `persona_equivocada`.
+- `persona_equivocada` es solo cuando no se sabe cuándo localizar al lead. Si contesta otra persona
+  y dice cuándo encontrarlo («no está, vuelve a las ocho»), es `callback` a esa hora.
 
 ## Notas del agente
 

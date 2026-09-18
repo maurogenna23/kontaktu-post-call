@@ -36,22 +36,25 @@ admitir ─┬─ otra organización o reentrega ──────────�
   `thread_id = idempotency_key`, así cada hecho es un thread y una reentrega cae en uno que ya tiene
   decisión (R5); y un **Store** SQLite con un documento por lead: intentos, recordatorios pendientes,
   baja, WhatsApp rechazado y llamadas cortadas (R4, R7, N1, N2, N4).
-- **Fallos:** el nodo del LLM tiene `RetryPolicy` solo para errores transitorios de OpenAI y un
-  `error_handler` que deja el evento como `otro` (revisión humana, N4) para que se procese igual (R8).
+- **Fallos:** el nodo del LLM tiene `RetryPolicy` solo para errores transitorios de OpenAI (3 intentos)
+  y un `error_handler` que deja el evento como `otro` (revisión humana, N4) para que se procese igual
+  (R8). Un error de configuración (clave, modelo, saldo) no es un fallo del evento: el proceso sale con
+  1 sin escribir nada y el evento se reprocesa al corregirla.
   Como última barrera, `emitir` no reescribe una orden cuya clave ya está en `ordenes.jsonl`.
 
 ## Modelo: gpt-5.6-luna
 
-`scripts/comparar_modelos.py` clasifica las 17 conversaciones de los dos lotes de verificación, 3 veces
+`scripts/comparar_modelos.py` clasifica las 24 conversaciones de los dos lotes de verificación, 3 veces
 cada una:
 
 | Modelo | Aciertos | Estables | Latencia | USD / 1000 llamadas |
 |---|---|---|---|---|
-| gpt-4o-mini | 42/51 | 17/17 | 2,1 s | 0,28 |
-| **gpt-5.6-luna** (razonamiento `low`) | **51/51** | 17/17 | 2,3 s | 0,48 |
+| gpt-4o-mini | 63/72 | 24/24 | 2,3 s | 0,29 |
+| **gpt-5.6-luna** (razonamiento `low`) | **72/72** | 24/24 | 2,2 s | 0,49 |
 
 gpt-4o-mini confunde siempre `cortada` con `visita_sin_confirmar`, uno de los pares que `casos.md`
-avisa. Luna acierta todo por 0,2 USD más cada mil llamadas y es el modelo de coste bajo actual de OpenAI.
+avisa, y resuelve «el lunes a las once», pedido un viernes, como el domingo. Luna acierta todo, fechas
+incluidas, por 0,2 USD más cada mil llamadas, y es el modelo de coste bajo actual de OpenAI.
 
 ## Decisiones donde la especificación deja margen
 
@@ -92,15 +95,17 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest`: 21 tests del dominio (ventana, días hábiles, reglas N1 a N5, recordatorios). Uno
-  reproduce el ejemplo resuelto campo por campo.
+- `uv run pytest`: 32 tests. Los del dominio (ventana, días hábiles, reglas N1 a N5, recordatorios),
+  uno de ellos igual al ejemplo resuelto campo por campo, y los del grafo completo con un clasificador
+  falso: por qué nodos pasa cada evento, reentregas y cada camino de fallo del modelo.
 - `uv run python scripts/verificar_lote.py`: corre, desde cero y un proceso por evento, el lote de
-  ejemplo y un lote sintético de 37 eventos: los casos sin ejemplo (603, callback fuera de ventana,
+  ejemplo y un lote sintético de 38 eventos: los casos sin ejemplo (603, callback fuera de ventana,
   descartado, IVR, 5xx), otras horas y otros días (sábado, domingo, 19:45, cambio de hora) y memoria
-  entre eventos (segunda cortada, intentos agotados, baja con recordatorios). Valida decisiones y cuerpos contra
+  entre eventos (segunda cortada, intentos agotados, baja con recordatorios), más un tercero que dice
+  cuándo localizar al lead. Valida decisiones y cuerpos contra
   los esquemas, invariantes (llamadas en ventana, un `cerrar_llamada` por llamada nueva, nada tras
   reentregas, otras organizaciones ni bajas) y el resultado esperado de cada evento; repite el lote
-  para R5 y prueba eventos rotos para R8. **53 de 53 correctos.**
+  para R5 y prueba eventos rotos para R8. **54 de 54 correctos.**
 - `uv run python scripts/comparar_modelos.py`: la tabla de arriba.
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
