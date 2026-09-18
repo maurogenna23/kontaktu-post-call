@@ -14,7 +14,7 @@ from orquestador import catalogo, evento, memoria, ordenes, salida
 from orquestador.clasificador import Clasificador, ClasificadorLLM, SalidaModelo
 from orquestador.config import Campana, cargar_campana
 from orquestador.evento import Evento, cargar_evento
-from orquestador.grafo import Dependencias, construir_grafo
+from orquestador.grafo import Dependencias, construir_grafo, id_del_hecho
 from orquestador.salida import LineaDecision, Salida
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -56,7 +56,7 @@ def procesar(ruta_evento: Path, raiz: Path = RAIZ) -> LineaDecision:
         grafo = construir_grafo(SqliteSaver(conexion, serde=serializador), store)
         final = grafo.invoke(
             {"evento": entrada},
-            {"configurable": {"thread_id": entrada.idempotency_key}},
+            {"configurable": {"thread_id": id_del_hecho(entrada)}},
             context=dependencias,
             # Decisión: cada checkpoint se escribe antes de seguir. El proceso vive un evento y no
             # debe terminar con escrituras pendientes en segundo plano.

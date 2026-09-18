@@ -408,6 +408,28 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
                 ),
             },
         ),
+        # R5 y R6 con la misma idempotency_key en dos organizaciones (una copia con otro organization_id).
+        # a) ajeno → nuestro: el nuestro se procesa completo.
+        sintetico(
+            44,
+            "02-call-ended-tomas.json",
+            "c_s44",
+            "2026-09-15T11:00:00",
+            {"organization_id": "org_demo_b"},
+            hecho=45,
+        ),
+        sintetico(45, "02-call-ended-tomas.json", "c_s45", "2026-09-15T11:00:00"),
+        # b) nuestro → ajeno → reentrega del nuestro: la reentrega repite la etiqueta original.
+        sintetico(46, "02-call-ended-tomas.json", "c_s46", "2026-09-15T11:30:00"),
+        sintetico(
+            47,
+            "02-call-ended-tomas.json",
+            "c_s46",
+            "2026-09-15T11:30:00",
+            {"organization_id": "org_demo_b"},
+            hecho=46,
+        ),
+        sintetico(48, "02-call-ended-tomas.json", "c_s46", "2026-09-15T11:30:00", hecho=46),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -471,6 +493,13 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
             {NO_ANTES_DE: "2026-09-21T10:00:00+02:00", PLANTILLA: "aviso_cambio_hora"},
         ),
         "sint_43": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-16T16:00:00+02:00"}),
+        # casos.md: otra organización → no_aplica, ninguna orden; reentrega → la etiqueta de la llamada
+        # original, ninguna orden nueva; 486 nuestro → cerrar_llamada y reintento corto (+60).
+        "sint_44": Esperado("no_aplica", []),
+        "sint_45": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T12:00:00+02:00"}),
+        "sint_46": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T12:30:00+02:00"}),
+        "sint_47": Esperado("no_aplica", []),
+        "sint_48": Esperado("ocupado", []),
     }
     return eventos, esperado
 
@@ -547,13 +576,14 @@ def comprobar(eventos: list[dict[str, Any]], datos: Path, esperado: dict[str, Es
     decision_de = {decision["event_id"]: decision for decision in decisiones}
     if len(decisiones) != len(eventos):
         fallos.append(f"{len(decisiones)} decisiones para {len(eventos)} eventos")
-    hechos_vistos: set[str] = set()
+    hechos_vistos: set[tuple[str, str]] = set()
     con_baja: set[str] = set()
     for evento in eventos:
         eid, propias = evento["event_id"], por_evento.get(evento["event_id"], [])
         operaciones = [orden["operacion"] for orden in propias]
-        nuevo = evento["idempotency_key"] not in hechos_vistos
-        hechos_vistos.add(evento["idempotency_key"])
+        hecho = (evento["organization_id"], evento["idempotency_key"])
+        nuevo = hecho not in hechos_vistos
+        hechos_vistos.add(hecho)
         es_llamada_nueva = (
             evento["type"] == "call.ended" and nuevo and evento["organization_id"] == ORGANIZACION
         )

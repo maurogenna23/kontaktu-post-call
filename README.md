@@ -30,9 +30,10 @@ admitir ─┬─ otra organización o reentrega ──────────�
   ventana, días hábiles y zona horaria los calcula el código.
 - **Las reglas son funciones puras** (`reglas.py`, `calendario.py`, `senalizacion.py`); los nodos solo
   las llaman y solo `emitir` tiene efectos.
-- **Persistencia:** un **checkpointer** SQLite con `thread_id = idempotency_key`, donde una reentrega cae en un
-  thread que ya tiene decisión (R5), y un **Store** con la memoria de cada lead: intentos,
-  recordatorios, baja, WhatsApp rechazado, llamadas cortadas (R4, R7, N1, N2, N4).
+- **Persistencia:** un **checkpointer** SQLite con un thread por hecho (organización +
+  `idempotency_key`), donde una reentrega cae en un thread que ya tiene decisión (R5), y un **Store**
+  con la memoria de cada lead: intentos, recordatorios, baja, WhatsApp rechazado, llamadas cortadas
+  (R4, R7, N1, N2, N4).
 - **Fallos del modelo:** `RetryPolicy` solo para errores transitorios (3 intentos) y un `error_handler`
   que deja el evento como `otro` para revisión humana (R8, N4). Un error de configuración (clave,
   modelo, saldo) no es del evento: el proceso sale con 1 y se reprocesa al corregirlo.
@@ -80,12 +81,12 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (43): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (45): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
-- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 42 eventos sintéticos, desde cero y
+- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 47 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de
   hora) y memoria entre eventos. Valida contra los esquemas, invariantes y el resultado esperado de
-  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **58 de 58 correctos.**
+  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **63 de 63 correctos.**
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
 `CLAUDE.md` recoge las instrucciones que seguí con el asistente de programación.

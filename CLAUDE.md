@@ -19,8 +19,9 @@ así que se implementa lo que dice la especificación, no lo que pasa con los 16
 - Estado del grafo: `TypedDict`. Pydantic solo en los bordes: evento de entrada, salida del LLM,
   órdenes y memoria del lead.
 - Persistencia de LangGraph, cada pieza para lo suyo:
-  - **Checkpointer** (`SqliteSaver`) con `thread_id = idempotency_key`: cada hecho es un thread. Una
-    reentrega cae en el mismo thread, ya procesado, y repite la etiqueta sin órdenes.
+  - **Checkpointer** (`SqliteSaver`) con un thread por hecho, `grafo.id_del_hecho` = organización +
+    `idempotency_key`. Una reentrega cae en el mismo thread, ya procesado, y repite la etiqueta sin
+    órdenes; un evento de otra organización con la misma clave cae en otro thread.
   - **Store** (`SqliteStore`) por lead: intentos, recordatorios pendientes, baja, WhatsApp rechazado,
     llamadas cortadas. Es la memoria que comparten todos los eventos de un lead.
 - Los modelos Pydantic que se guardan en el checkpoint se registran en el serializador

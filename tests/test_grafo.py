@@ -19,7 +19,7 @@ from langgraph.store.memory import InMemoryStore
 from orquestador.clasificador import EtiquetaConversacion, SalidaModelo
 from orquestador.config import Campana
 from orquestador.evento import Evento
-from orquestador.grafo import Dependencias, construir_grafo
+from orquestador.grafo import Dependencias, construir_grafo, id_del_hecho
 from orquestador.salida import Salida
 
 
@@ -58,10 +58,12 @@ class Sistema:
 
     def procesar(self, nombre: str) -> list[str]:
         """Procesa un evento de ejemplo y devuelve los nodos por los que pasó, en orden."""
-        ev = evento(nombre)
+        return self.procesar_evento(evento(nombre))
+
+    def procesar_evento(self, ev: Evento) -> list[str]:
         partes = self._grafo.stream(
             {"evento": ev},
-            {"configurable": {"thread_id": ev.idempotency_key}},
+            {"configurable": {"thread_id": id_del_hecho(ev)}},
             context=self._dependencias,
             stream_mode="updates",
             version="v2",
@@ -186,3 +188,36 @@ def test_un_error_de_configuracion_detiene_el_proceso_sin_escribir_nada(
         sistema.procesar("03-call-ended-elena.json")
     assert modelo.llamadas == 1  # sin reintentos: no se arregla solo
     assert not (tmp_path / "decisiones.jsonl").exists() and not (tmp_path / "ordenes.jsonl").exists()
+
+
+def copia(nombre: str, event_id: str, organizacion: str | None = None) -> Evento:
+    """Otra entrega del mismo hecho (misma idempotency_key), opcionalmente de otra organización."""
+    original = evento(nombre)
+    return original.model_copy(
+        update={"event_id": event_id, "organization_id": organizacion or original.organization_id}
+    )
+
+
+def test_un_evento_ajeno_con_la_misma_clave_no_hace_pasar_el_nuestro_por_reentrega(
+    campana: Campana, tmp_path: Path
+) -> None:
+    sistema = Sistema(campana, ClasificadorFalso(respuesta("otro")), tmp_path)
+    sistema.procesar_evento(copia("02-call-ended-tomas.json", "evt_ajeno", organizacion="org_demo_b"))
+    nodos = sistema.procesar("02-call-ended-tomas.json")
+    assert nodos == ["admitir", "clasificar_senalizacion", "decidir", "emitir"]
+    assert sistema.decision("evt_02")["etiqueta"] == "ocupado"
+    assert sistema.operaciones("evt_02") == ["cerrar_llamada", "programar_llamada"]
+    assert sistema.operaciones("evt_ajeno") == []
+
+
+def test_un_evento_ajeno_no_pisa_la_etiqueta_que_repite_la_reentrega_del_nuestro(
+    campana: Campana, tmp_path: Path
+) -> None:
+    sistema = Sistema(campana, ClasificadorFalso(respuesta("otro")), tmp_path)
+    sistema.procesar("02-call-ended-tomas.json")
+    sistema.procesar_evento(copia("02-call-ended-tomas.json", "evt_ajeno", organizacion="org_demo_b"))
+    nodos = sistema.procesar_evento(copia("02-call-ended-tomas.json", "evt_reentrega"))
+    assert nodos == ["admitir", "emitir"]
+    assert sistema.decision("evt_ajeno")["etiqueta"] == "no_aplica"
+    assert sistema.decision("evt_reentrega")["etiqueta"] == "ocupado"
+    assert sistema.operaciones("evt_reentrega") == []

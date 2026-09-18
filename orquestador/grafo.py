@@ -7,8 +7,8 @@
 
 Los nodos son finos: leen el estado, llaman al dominio (senalizacion, clasificador, reglas) y
 devuelven solo lo que cambia. Persistencia (se arma en aplicacion.py):
-- Checkpointer con thread_id = idempotency_key del evento: cada hecho es un thread. La decisión
-  que queda guardada en ese thread es lo que permite reconocer una reentrega (R5).
+- Checkpointer con un thread por hecho, id_del_hecho(evento) = organización + idempotency_key. La
+  decisión que queda guardada en ese thread es lo que permite reconocer una reentrega (R5).
 - Store con un documento por lead: la memoria que comparten todos sus eventos (R4, R7, N1, N2, N4).
 """
 
@@ -184,6 +184,17 @@ def construir_grafo(
 def _sin_ordenes(etiqueta: Etiqueta, motivo: str, confianza: float) -> dict[str, Any]:
     clasificacion = Clasificacion(etiqueta=etiqueta, motivo=motivo, confianza=confianza)
     return {"clasificacion": clasificacion, "ordenes": [], "memoria": None}
+
+
+def id_del_hecho(evento: Evento) -> str:
+    """El thread del checkpointer para este evento: cada hecho es un thread.
+
+    Decisión: la especificación dice que idempotency_key identifica el hecho; lo acotamos por
+    organización, como la memoria del lead. Con la clave sola, un evento de otra organización con la
+    misma clave compartiría el thread: si llega antes, el nuestro se toma por reentrega; si llega
+    después, pisa la decisión que una reentrega del nuestro tiene que repetir.
+    """
+    return f"{evento.organization_id}:{evento.idempotency_key}"
 
 
 def _clave_lead(evento: Evento) -> tuple[tuple[str, ...], str]:
