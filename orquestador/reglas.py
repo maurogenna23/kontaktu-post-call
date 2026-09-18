@@ -137,7 +137,8 @@ def decidir_llamada(
             plan.tarea(
                 "verificar_telefono",
                 "Verificar el teléfono del lead",
-                f"{clasificacion.motivo}. Sin reintentos por voz.",
+                # El motivo del modelo puede terminar o no en punto: se normaliza antes de añadir la frase.
+                f"{clasificacion.motivo.rstrip('. ')}. Sin reintentos por voz.",
             )
         case "rechazada":
             plan.respaldo("rechazó la llamada antes de descolgar (603)")

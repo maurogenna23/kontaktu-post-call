@@ -185,3 +185,13 @@ def test_la_baja_cancela_los_recordatorios_pendientes(campana: Campana) -> None:
         "cancelar_recordatorio",
     ]
     assert baja.memoria.recordatorios_pendientes == ()
+
+
+def test_el_detalle_no_duplica_el_punto_del_motivo_del_modelo(campana: Campana) -> None:
+    clasificacion = Clasificacion(
+        etiqueta="persona_equivocada", motivo="Contestó otra persona.", confianza=0.9
+    )
+    plan = decidir_llamada(
+        evento("03-call-ended-elena.json"), clasificacion, SIN_DATOS, MemoriaLead(), campana
+    )
+    assert cuerpo(plan, "crear_tarea")["detalle"] == "Contestó otra persona. Sin reintentos por voz."
