@@ -84,15 +84,19 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Qué dejé fuera
 
-- **Atomicidad entre la salida y SQLite:** si el proceso muere entre escribir las órdenes y guardar la
-  memoria, la reentrega no duplica órdenes pero ese intento no queda contado. Pide un outbox.
+- **Atomicidad:** `emitir` escribe los ficheros, después la memoria y al final el checkpoint, sin una
+  transacción común. Si el proceso muere entre medio, la reentrega vuelve a pasar por el LLM y puede
+  decidir distinto. Tras los ficheros: las órdenes con la misma clave conservan el cuerpo viejo, la
+  decisión nueva puede mostrar otra etiqueta y las operaciones nuevas se suman a las viejas; sin
+  reentrega, la memoria no registra el evento. Tras la memoria: la reentrega aplica el evento dos veces
+  (otro intento, otra cortada), aunque los `reminder_id` no se duplican. Pide un outbox.
 - **Eventos del mismo lead en paralelo:** el contrato es un proceso por evento, en orden.
 - **Timeout por nodo:** en LangGraph exige nodos asíncronos; el timeout está en el cliente de OpenAI.
 - **LangSmith** está apagado por defecto: activarlo (`.env.example`) añade red hacia LangSmith.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (64): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (65): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
 - `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 50 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de
