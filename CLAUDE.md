@@ -43,9 +43,11 @@ así que se implementa lo que dice la especificación, no lo que pasa con los 16
 
 ## Comandos
 - `uv sync` · `uv run python run.py eventos/01-call-ended-nuria.json`
-- `uv run python scripts/verificar_lote.py`: corre los 16 eventos desde cero y comprueba esquemas,
-  invariantes y resultados esperados.
-- `uv run pytest` · `uv run ruff check . && uv run ruff format --check .` · `uv run mypy orquestador run.py`
+- `uv run python scripts/verificar_lote.py`: corre desde cero el lote de ejemplo y el sintético y
+  comprueba esquemas, invariantes, resultados esperados, R5 y R8. Si cambia una regla, su resultado
+  esperado se actualiza ahí leyendo `casos.md`, no copiando lo que salga.
+- `uv run python scripts/comparar_modelos.py`: aciertos, estabilidad y coste de cada modelo.
+- `uv run pytest` · `uv run ruff check . && uv run ruff format --check .` · `uv run mypy orquestador run.py tests scripts`
 
 ## Antes de dar algo por terminado
-`uv run ruff check . && uv run ruff format --check . && uv run mypy orquestador run.py && uv run pytest && uv run python scripts/verificar_lote.py`
+`uv run ruff check . && uv run ruff format --check . && uv run mypy orquestador run.py tests scripts && uv run pytest && uv run python scripts/verificar_lote.py`
