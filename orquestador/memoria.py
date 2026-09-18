@@ -3,7 +3,7 @@
 Vive en el Store de LangGraph (un documento por lead) y cada proceso la lee y la reescribe.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict
 
 from orquestador.catalogo import CanalRecordatorio
 
@@ -13,6 +13,8 @@ class RecordatorioPendiente(BaseModel):
 
     reminder_id: str
     canal: CanalRecordatorio
+    # Cuándo sale. Pasado ese instante ya se envió y no hay nada que cancelar (R7).
+    cuando: AwareDatetime
 
 
 class MemoriaLead(BaseModel):

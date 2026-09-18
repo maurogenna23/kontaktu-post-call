@@ -4,13 +4,14 @@ La clasificación de las conversaciones se fija a mano: aquí se prueban las ór
 """
 
 import json
-from datetime import date, time
+from datetime import date, datetime, time
 from typing import Any
 
 from conftest import RAIZ, evento
 
 from orquestador.catalogo import Clasificacion, DatosConversacion, EtiquetaLlamada
 from orquestador.config import Campana
+from orquestador.evento import Evento
 from orquestador.memoria import MemoriaLead
 from orquestador.reglas import Plan, decidir_llamada, decidir_mensaje
 from orquestador.senalizacion import clasificar_por_senalizacion
@@ -132,3 +133,55 @@ def test_persona_equivocada_no_reintenta(campana: Campana) -> None:
     plan = llamada("03-call-ended-elena.json", campana, etiqueta="persona_equivocada")
     assert operaciones(plan) == ["cerrar_llamada", "crear_tarea"]
     assert cuerpo(plan, "crear_tarea")["tipo"] == "verificar_telefono"
+
+
+def en(nombre: str, instante: str) -> Evento:
+    """El evento de ejemplo, movido a otro instante (hora de Madrid)."""
+    return evento(nombre).model_copy(update={"occurred_at": datetime.fromisoformat(instante)})
+
+
+def documentacion(instante: str, campana: Campana) -> Plan:
+    clasificacion = Clasificacion(etiqueta="documentacion_enviada", motivo="enlace enviado", confianza=0.9)
+    return decidir_llamada(
+        en("08-call-ended-marcos.json", instante), clasificacion, SIN_DATOS, MemoriaLead(), campana
+    )
+
+
+def test_solo_se_cancelan_los_recordatorios_que_aun_no_salieron(campana: Campana) -> None:
+    plan = documentacion("2026-09-15T16:42:00+02:00", campana)  # lead: jueves 16:42 · comercial: viernes
+    respuesta = decidir_mensaje(
+        en("14-message-received-marcos.json", "2026-09-18T10:00:00+02:00"), plan.memoria, campana
+    )  # viernes: el WhatsApp del jueves ya salió
+    comercial = next(p for p in plan.memoria.recordatorios_pendientes if p.canal == "tarea_comercial")
+    assert [o.cuerpo["reminder_id"] for o in respuesta.ordenes] == [comercial.reminder_id]
+    assert respuesta.memoria.recordatorios_pendientes == ()
+
+
+def test_el_recordatorio_al_lead_sale_dentro_de_la_ventana(campana: Campana) -> None:
+    # viernes 16:42 + 48 h = domingo 16:42, sin franja → lunes a las 10:00
+    plan = documentacion("2026-09-18T16:42:00+02:00", campana)
+    cuandos = {
+        o.cuerpo["canal"]: o.cuerpo["cuando"] for o in plan.ordenes if o.operacion == "programar_recordatorio"
+    }
+    assert cuandos == {
+        "whatsapp_lead": "2026-09-21T10:00:00+02:00",
+        "tarea_comercial": "2026-09-23T16:42:00+02:00",
+    }
+
+
+def test_la_baja_cancela_los_recordatorios_pendientes(campana: Campana) -> None:
+    plan = documentacion("2026-09-15T16:42:00+02:00", campana)
+    baja = decidir_llamada(
+        en("06-call-ended-pedro.json", "2026-09-16T11:00:00+02:00"),
+        Clasificacion(etiqueta="no_contactar", motivo="pidió la baja", confianza=0.95),
+        SIN_DATOS,
+        plan.memoria,
+        campana,
+    )
+    assert operaciones(baja) == [
+        "cerrar_llamada",
+        "marcar_no_contactar",
+        "cancelar_recordatorio",
+        "cancelar_recordatorio",
+    ]
+    assert baja.memoria.recordatorios_pendientes == ()

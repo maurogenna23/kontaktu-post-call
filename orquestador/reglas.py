@@ -70,6 +70,9 @@ def decidir_llamada(
     if etiqueta == "no_contactar" or memoria.no_contactar:
         if not memoria.no_contactar:
             plan.marcar_no_contactar(clasificacion.motivo)
+            # Decisión: los recordatorios que le quedaban pendientes le llegarían igual; se cancelan.
+            # Cancelar no es una orden saliente, así que no contradice «ninguna otra orden» (caso 10).
+            plan.cancelar_recordatorios("el lead pidió no ser contactado", evento.occurred_at)
         return plan.resultado()
 
     if datos.rechaza_whatsapp or etiqueta == "documentacion_pendiente":
@@ -154,7 +157,7 @@ def decidir_llamada(
 def decidir_mensaje(evento: Evento, memoria: MemoriaLead, campana: Campana) -> Plan:
     """R7: cuando el lead escribe, se cancela cada recordatorio pendiente que se le programó."""
     plan = _Planificador(evento, campana, memoria)
-    plan.cancelar_recordatorios("el lead respondió por WhatsApp")
+    plan.cancelar_recordatorios("el lead respondió por WhatsApp", evento.occurred_at)
     return plan.resultado()
 
 
@@ -180,10 +183,13 @@ def _visita_reservada(plan: "_Planificador", evento: Evento, campana: Campana) -
 def _documentacion_enviada(plan: "_Planificador", evento: Evento, campana: Campana) -> None:
     ocurrio, recordatorios = evento.occurred_at, campana.recordatorios
     if plan.whatsapp_permitido:
+        # Decisión: las 48 horas son un mínimo y el mensaje al lead sale dentro de la ventana (R3):
+        # documentación el viernes por la tarde → recordatorio el lunes a las 10:00, no el domingo.
+        plazo = timedelta(hours=recordatorios.documentacion_lead_horas)
         plan.recordatorio(
             "whatsapp_lead",
             "lead",
-            sumar(ocurrio, timedelta(hours=recordatorios.documentacion_lead_horas), campana),
+            primer_instante_valido(sumar(ocurrio, plazo, campana), campana),
             plantilla="recordatorio_documentacion",
         )
     plan.recordatorio(
@@ -348,16 +354,20 @@ class _Planificador:
         if orden is not None:
             # El CRM respondería con un reminder_id; lo generamos estable y lo persistimos, porque
             # el cancelar_recordatorio llegará en otro proceso.
-            pendiente = RecordatorioPendiente(reminder_id=f"rem_{huella(orden.idempotency_key)}", canal=canal)
+            pendiente = RecordatorioPendiente(
+                reminder_id=f"rem_{huella(orden.idempotency_key)}", canal=canal, cuando=cuando
+            )
             self.recordar(recordatorios_pendientes=(*self.memoria.recordatorios_pendientes, pendiente))
 
-    def cancelar_recordatorios(self, motivo: str) -> None:
+    def cancelar_recordatorios(self, motivo: str, ahora: datetime) -> None:
+        """Cancela los que aún no han salido; los ya enviados no se pueden cancelar (R7)."""
         for pendiente in self.memoria.recordatorios_pendientes:
-            self._emitir(
-                "cancelar_recordatorio",
-                CancelarRecordatorio(reminder_id=pendiente.reminder_id, motivo=motivo),
-                pendiente.reminder_id,
-            )
+            if pendiente.cuando > ahora:
+                self._emitir(
+                    "cancelar_recordatorio",
+                    CancelarRecordatorio(reminder_id=pendiente.reminder_id, motivo=motivo),
+                    pendiente.reminder_id,
+                )
         self.recordar(recordatorios_pendientes=())
 
     def marcar_no_contactar(self, motivo: str) -> None:
