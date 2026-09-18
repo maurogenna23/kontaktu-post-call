@@ -13,8 +13,8 @@ from conftest import RAIZ, evento
 from orquestador.catalogo import Clasificacion, DatosConversacion, EtiquetaLlamada
 from orquestador.config import Campana
 from orquestador.evento import Evento
-from orquestador.memoria import MemoriaLead
-from orquestador.reglas import Plan, decidir_llamada, decidir_mensaje
+from orquestador.memoria import MemoriaLead, RecordatorioPendiente
+from orquestador.reglas import Plan, _Planificador, decidir_llamada, decidir_mensaje
 from orquestador.senalizacion import clasificar_por_senalizacion
 
 SIN_DATOS = DatosConversacion()
@@ -240,3 +240,72 @@ def test_callback_usa_lo_que_dijo_el_lead_y_completa_lo_que_falta(
     assert cuerpo(plan, "programar_llamada")["no_antes_de"] == esperado
     avisos = [o.cuerpo["parametros"] for o in plan.ordenes if o.operacion == "enviar_plantilla_whatsapp"]
     assert [a["hora_pedida"] for a in avisos] == ([aviso] if aviso else [])
+
+
+@pytest.mark.parametrize(
+    ("memoria", "datos"),
+    [
+        (MemoriaLead(intentos=2, llamadas_cortadas=1, rechaza_whatsapp=True), SIN_DATOS),
+        (MemoriaLead(intentos=2, llamadas_cortadas=1), DatosConversacion(rechaza_whatsapp=True)),
+    ],
+    ids=["rechazó WhatsApp antes", "rechaza WhatsApp en esta llamada"],
+)
+def test_segunda_cortada_sin_intentos_ni_whatsapp_crea_las_dos_tareas(
+    memoria: MemoriaLead, datos: DatosConversacion, campana: Campana
+) -> None:
+    plan = llamada("11-call-ended-carla.json", campana, memoria, etiqueta="visita_sin_confirmar", datos=datos)
+    tareas = [o for o in plan.ordenes if o.operacion == "crear_tarea"]
+    assert [t.idempotency_key for t in tareas] == [
+        "lk-out-0315:crear_tarea:respaldo",
+        "lk-out-0315:crear_tarea",
+    ]
+    assert [t.cuerpo["titulo"] for t in tareas] == [
+        "Decidir cómo seguir: sin reintento por voz ni WhatsApp",
+        "Revisar la llamada: segunda cortada con este lead",
+    ]
+    assert plan.memoria.respaldo_resuelto
+
+
+def test_el_respaldo_se_resuelve_una_vez_por_lead_tambien_con_la_tarea(campana: Campana) -> None:
+    agotado = MemoriaLead(intentos=3, rechaza_whatsapp=True)
+    primero = llamada("01-call-ended-nuria.json", campana, agotado)
+    assert operaciones(primero) == ["cerrar_llamada", "crear_tarea"]
+    despues = llamada("05-call-ended-nuria.json", campana, primero.memoria)
+    assert operaciones(despues) == ["cerrar_llamada"]
+
+
+def test_dos_ordenes_distintas_con_la_misma_clave_son_un_defecto(campana: Campana) -> None:
+    plan = _Planificador(evento("02-call-ended-tomas.json"), campana, MemoriaLead())
+    plan.tarea("revisar_llamada", "Uno", "detalle uno")
+    with pytest.raises(ValueError, match="misma clave"):
+        plan.tarea("revisar_llamada", "Dos", "detalle dos")
+
+
+def test_repetir_la_misma_orden_es_idempotente(campana: Campana) -> None:
+    plan = _Planificador(evento("02-call-ended-tomas.json"), campana, MemoriaLead())
+    plan.tarea("revisar_llamada", "Uno", "detalle")
+    plan.tarea("revisar_llamada", "Uno", "detalle")
+    assert len(plan.resultado().ordenes) == 1
+
+
+def test_un_reminder_id_repetido_en_la_memoria_se_cancela_una_vez(campana: Campana) -> None:
+    pendiente = RecordatorioPendiente(
+        reminder_id="rem_x", canal="whatsapp_lead", cuando=datetime.fromisoformat("2026-09-20T10:00:00+02:00")
+    )
+    memoria = MemoriaLead(recordatorios_pendientes=(pendiente, pendiente))
+    plan = decidir_mensaje(evento("14-message-received-marcos.json"), memoria, campana)
+    assert [o.cuerpo["reminder_id"] for o in plan.ordenes] == ["rem_x"]
+
+
+def test_reprocesar_el_mismo_hecho_no_duplica_los_recordatorios_en_la_memoria(campana: Campana) -> None:
+    # Caída entre el store y el checkpoint: la reentrega vuelve a decidir con la memoria ya escrita.
+    primera = documentacion("2026-09-15T16:42:00+02:00", campana)
+    clasificacion = Clasificacion(etiqueta="documentacion_enviada", motivo="enlace enviado", confianza=0.9)
+    otra_vez = decidir_llamada(
+        en("08-call-ended-marcos.json", "2026-09-15T16:42:00+02:00"),
+        clasificacion,
+        SIN_DATOS,
+        primera.memoria,
+        campana,
+    )
+    assert otra_vez.memoria.recordatorios_pendientes == primera.memoria.recordatorios_pendientes

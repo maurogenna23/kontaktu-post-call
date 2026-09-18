@@ -160,7 +160,7 @@ def decidir_llamada(
     elif etiqueta in ETIQUETAS_CORTADA and plan.memoria.llamadas_cortadas >= 2:
         plan.tarea(
             "revisar_llamada",
-            "Revisar la llamada",
+            "Revisar la llamada: segunda cortada con este lead",
             f"Segunda llamada cortada con este lead: {clasificacion.motivo}",
         )
     return plan.resultado()
@@ -300,18 +300,20 @@ class _Planificador:
 
     def respaldo(self, motivo: str) -> None:
         campana = self._campana
-        if self.memoria.respaldo_enviado:
+        if self.memoria.respaldo_resuelto:
             return
         if campana.canal_respaldo == "whatsapp" and self.whatsapp_permitido:
             self.whatsapp("primer_toque_respaldo", {})
-            self.recordar(respaldo_enviado=True)
         else:
-            # Decisión: sin canal de respaldo utilizable, una persona decide cómo seguir.
+            # Decisión: sin canal de respaldo utilizable, una persona decide cómo seguir. Lleva su
+            # propio distintivo: en el mismo evento puede convivir con la revisión de N4.
             self.tarea(
                 "revisar_llamada",
-                "Revisar la llamada",
+                "Decidir cómo seguir: sin reintento por voz ni WhatsApp",
                 f"{motivo}; el lead no admite el canal de respaldo ({campana.canal_respaldo})",
+                distintivo="respaldo",
             )
+        self.recordar(respaldo_resuelto=True)
 
     def avisar_cambio_hora(self, pedido: str, programada: datetime) -> None:
         """Caso 12: si la llamada no cae cuando la pidió el lead, se le avisa (salvo N1)."""
@@ -337,7 +339,14 @@ class _Planificador:
             ),
         )
 
-    def tarea(self, tipo: TipoTarea, titulo: str, detalle: str, vence: datetime | None = None) -> None:
+    def tarea(
+        self,
+        tipo: TipoTarea,
+        titulo: str,
+        detalle: str,
+        vence: datetime | None = None,
+        distintivo: str | None = None,
+    ) -> None:
         campana = self._campana
         vence = vence or sumar_dias_naturales(
             self._evento.occurred_at, campana.tareas.vencimiento_por_defecto_dias, campana
@@ -352,6 +361,7 @@ class _Planificador:
                 detalle=detalle,
                 vence_el=formatear(vence, campana),
             ),
+            distintivo,
         )
 
     def recordatorio(
@@ -374,17 +384,19 @@ class _Planificador:
             ),
             distintivo,
         )
-        if orden is not None:
-            # El CRM respondería con un reminder_id; lo generamos estable y lo persistimos, porque
-            # el cancelar_recordatorio llegará en otro proceso.
-            pendiente = RecordatorioPendiente(
-                reminder_id=f"rem_{huella(orden.idempotency_key)}", canal=canal, cuando=cuando
-            )
+        # El CRM respondería con un reminder_id; lo generamos estable y lo persistimos, porque el
+        # cancelar_recordatorio llegará en otro proceso. Si ya está en la memoria (una reentrega
+        # tras caerse entre el store y el checkpoint vuelve a pasar por aquí), no se duplica.
+        reminder_id = f"rem_{huella(orden.idempotency_key)}"
+        if all(p.reminder_id != reminder_id for p in self.memoria.recordatorios_pendientes):
+            pendiente = RecordatorioPendiente(reminder_id=reminder_id, canal=canal, cuando=cuando)
             self.recordar(recordatorios_pendientes=(*self.memoria.recordatorios_pendientes, pendiente))
 
     def cancelar_recordatorios(self, motivo: str, ahora: datetime) -> None:
         """Cancela los que aún no han salido; los ya enviados no se pueden cancelar (R7)."""
-        for pendiente in self.memoria.recordatorios_pendientes:
+        # Ids únicos: una memoria que ya tenga un reminder_id repetido no rompe nada.
+        unicos = {p.reminder_id: p for p in self.memoria.recordatorios_pendientes}
+        for pendiente in unicos.values():
             if pendiente.cuando > ahora:
                 self._emitir(
                     "cancelar_recordatorio",
@@ -407,13 +419,15 @@ class _Planificador:
         )
         self.recordar(no_contactar=True)
 
-    def _emitir(
-        self, operacion: Operacion, cuerpo: CuerpoOrden, distintivo: str | None = None
-    ) -> Orden | None:
+    def _emitir(self, operacion: Operacion, cuerpo: CuerpoOrden, distintivo: str | None = None) -> Orden:
+        """Una misma clave, una misma orden: repetirla es idempotente; con otro contenido, un defecto."""
         orden = crear_orden(
             self._evento.event_id, self._evento.idempotency_key, operacion, cuerpo, distintivo
         )
-        if any(o.idempotency_key == orden.idempotency_key for o in self._ordenes):
-            return None  # la misma orden dos veces en un evento: se emite una
+        for existente in self._ordenes:
+            if existente.idempotency_key == orden.idempotency_key:
+                if existente != orden:
+                    raise ValueError(f"dos órdenes distintas con la misma clave: {orden.idempotency_key}")
+                return existente
         self._ordenes.append(orden)
         return orden

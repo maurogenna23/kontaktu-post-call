@@ -25,5 +25,6 @@ class MemoriaLead(BaseModel):
     llamadas_cortadas: int = 0
     no_contactar: bool = False
     rechaza_whatsapp: bool = False
-    respaldo_enviado: bool = False
+    # El canal de respaldo ya se resolvió: salió el WhatsApp o se derivó a una persona (tarea).
+    respaldo_resuelto: bool = False
     recordatorios_pendientes: tuple[RecordatorioPendiente, ...] = ()

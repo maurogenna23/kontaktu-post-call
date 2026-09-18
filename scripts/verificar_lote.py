@@ -430,6 +430,11 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
             hecho=46,
         ),
         sintetico(48, "02-call-ended-tomas.json", "c_s46", "2026-09-15T11:30:00", hecho=46),
+        # Hueco 19: segunda cortada en el tercer intento de un lead que rechazó WhatsApp. Cada regla
+        # deja su tarea: la del respaldo imposible y la de N4.
+        sintetico(49, "04-call-ended-rosa.json", "c_s49", "2026-09-15T11:47:00"),
+        sintetico(50, "13-call-ended-ivan.json", "c_s49", "2026-09-15T13:00:00"),
+        sintetico(51, "11-call-ended-carla.json", "c_s49", "2026-09-15T17:50:00"),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -500,6 +505,20 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_46": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T12:30:00+02:00"}),
         "sint_47": Esperado("no_aplica", []),
         "sint_48": Esperado("ocupado", []),
+        "sint_49": Esperado("cortada", [CERRAR, LLAMAR]),
+        "sint_50": Esperado(
+            "documentacion_pendiente", [CERRAR, TAREA], {TIPO_TAREA: "enviar_documentacion_email"}
+        ),
+        "sint_51": Esperado(
+            "visita_sin_confirmar",
+            [CERRAR, TAREA, TAREA],
+            {
+                "crear_tarea.titulo": [
+                    "Decidir cómo seguir: sin reintento por voz ni WhatsApp",
+                    "Revisar la llamada: segunda cortada con este lead",
+                ]
+            },
+        ),
     }
     return eventos, esperado
 

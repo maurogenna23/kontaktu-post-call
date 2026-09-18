@@ -60,8 +60,8 @@ Cada una lleva un comentario `Decisión:` en el código.
 - **Callback** a lo que pidió el lead, que interpreta el modelo porque es lenguaje libre. Día sin hora: la
   apertura de la ventana ese día; franja: su comienzo (tarde, 16:00); hora sin fecha o ya pasada: la
   próxima vez que llega. Si cae en otra hora, u otro día si no dio hora, `aviso_cambio_hora`.
-- **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, WhatsApp de
-  respaldo una vez, o `revisar_llamada` si el lead rechazó WhatsApp.
+- **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, el respaldo se
+  resuelve una vez por lead: WhatsApp o, si lo rechazó, una tarea para decidir cómo seguir.
 - **Recordatorios:** el WhatsApp al lead sale tras 48 horas como mínimo y dentro de la ventana. Al
   responder el lead solo se cancelan los que aún no salieron.
 - **Baja:** manda sobre cualquier etiqueta y cancela los recordatorios pendientes; después, cada
@@ -81,12 +81,12 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (45): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (52): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
-- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 47 eventos sintéticos, desde cero y
+- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 50 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de
   hora) y memoria entre eventos. Valida contra los esquemas, invariantes y el resultado esperado de
-  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **63 de 63 correctos.**
+  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **66 de 66 correctos.**
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
 `CLAUDE.md` recoge las instrucciones que seguí con el asistente de programación.
