@@ -17,7 +17,7 @@ _CONFIANZA_DETECTOR = 0.9
 _CONFIANZA_HEURISTICA = 0.7
 
 
-def clasificar_por_senalizacion(telefonia: Telefonia) -> Clasificacion | None:
+def clasificar_por_senalizacion(telefonia: Telefonia, hay_conversacion: bool) -> Clasificacion | None:
     """La clasificación si la telefonía la decide; None si atendió una persona y hay que leer."""
     codigo, texto = telefonia.sip_status_code, telefonia.sip_status
     if codigo == 486:
@@ -58,5 +58,11 @@ def clasificar_por_senalizacion(telefonia: Telefonia) -> Clasificacion | None:
             etiqueta="otro",
             motivo="contestó una centralita automática (machine-ivr)",
             confianza=_CONFIANZA_DETECTOR,
+        )
+    if not hay_conversacion:
+        # Decisión: descolgó una persona pero no se dijo nada; no hay nada que leer ni caso que
+        # encaje, así que es otro y una persona lo revisa (N4).
+        return Clasificacion(
+            etiqueta="otro", motivo="descolgaron pero no hubo conversación", confianza=_CONFIANZA_DETECTOR
         )
     return None

@@ -36,6 +36,13 @@ disallow_untyped_defs = true
 warn_unused_ignores = true
 ignore_missing_imports = true
 
+# Los tipos de add_node en LangGraph 1.2.11 no casan con mypy 2.3: rechaza hasta un nodo
+# `def nodo(estado: Estado) -> dict`, el caso más simple. Se desactiva solo ese código de error y
+# solo en el módulo que arma el grafo; las firmas de los nodos siguen comprobándose.
+[[tool.mypy.overrides]]
+module = "orquestador.grafo"
+disable_error_code = ["call-overload"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

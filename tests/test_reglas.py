@@ -27,7 +27,7 @@ def llamada(
 ) -> Plan:
     ev = evento(nombre)
     assert ev.telephony is not None
-    clasificacion = clasificar_por_senalizacion(ev.telephony)
+    clasificacion = clasificar_por_senalizacion(ev.telephony, bool(ev.transcript))
     if clasificacion is None:
         assert etiqueta is not None, f"{nombre} necesita la etiqueta de la conversación"
         clasificacion = Clasificacion(etiqueta=etiqueta, motivo="motivo de prueba", confianza=0.9)
