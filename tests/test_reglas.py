@@ -227,9 +227,11 @@ def test_ocupado_se_queda_entre_30_y_90_minutos_si_la_ventana_lo_permite(
     ("fecha", "hora", "esperado", "aviso"),
     [
         # Martes 15 a las 17:05 (instante de referencia del evento 09).
+        # Hora pedida a menos de 2 horas: manda lo pedido, no la separación general.
         (None, time(19, 0), "2026-09-15T19:00:00+02:00", None),  # hora sin fecha, aún por llegar hoy
         (None, time(10, 0), "2026-09-16T10:00:00+02:00", None),  # hora sin fecha, ya pasó: mañana
-        (date(2026, 9, 14), time(18, 0), "2026-09-15T18:00:00+02:00", None),  # fecha pasada: próxima vez
+        # Fecha pasada: la próxima vez que llega esa hora, también a menos de 2 horas.
+        (date(2026, 9, 14), time(18, 0), "2026-09-15T18:00:00+02:00", None),
         (date(2026, 9, 17), None, "2026-09-17T10:00:00+02:00", None),  # día sin hora: apertura ese día
         (date(2026, 9, 20), None, "2026-09-21T10:00:00+02:00", "domingo 20"),  # domingo sin franja: aviso
         (date(2026, 9, 15), None, "2026-09-15T19:05:00+02:00", None),  # «hoy» sin hora: separación general

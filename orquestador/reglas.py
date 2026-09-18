@@ -230,11 +230,14 @@ def _documentacion_enviada(plan: _Planificador, evento: Evento, campana: Campana
 def _callback(plan: _Planificador, evento: Evento, datos: DatosConversacion, campana: Campana) -> None:
     """Casos 3 y 12: la llamada va al momento que pidió el lead, ajustado a la ventana.
 
-    Decisión: se usa todo lo que dijo el lead y se completa lo que falta.
+    Decisión: cuando el lead fija el momento, manda lo que pidió; cuando lo calculamos nosotros, se
+    aplica la separación general. campana.yaml llama a la separación mínima «regla general», el caso 3
+    dice «para ese momento» y el único ajuste que la especificación le hace a un callback es la
+    ventana (caso 12). Por eso una hora pedida a menos de 2 horas se respeta.
     - Con hora: ese momento. Sin fecha, o si ya pasó, la próxima vez que llegue esa hora: el lead no
       puede estar pidiendo el pasado.
     - Día sin hora («el jueves»): la apertura de la ventana ese día.
-    - Ni día ni hora, o solo «hoy»: la separación general.
+    - Ni día ni hora, o solo «hoy»: el lead no fijó el momento; la separación general.
     Si la llamada no cae en lo que pidió (otra hora; con día sin hora, otro día), se le avisa.
     """
     ocurrio, fecha, hora = evento.occurred_at, datos.callback_fecha, datos.callback_hora
@@ -423,7 +426,14 @@ class _Planificador:
             self.recordar(recordatorios_pendientes=(*self.memoria.recordatorios_pendientes, pendiente))
 
     def cancelar_recordatorios(self, motivo: str, ahora: datetime) -> None:
-        """Cancela los que aún no han salido; los ya enviados no se pueden cancelar (R7)."""
+        """R7: cancela los que aún no han salido.
+
+        Decisión: un recordatorio cuyo momento ya pasó no se cancela.
+        - El OpenAPI define cancelar_recordatorio como «Cancela un recordatorio pendiente», y R7 pide
+          cancelar «cada recordatorio pendiente». Uno cuyo momento ya pasó salió: no está pendiente.
+        - Contraargumento: que salió lo deducimos de la hora; el CRM no lo confirma. Si lo hubiera
+          demorado, le llegaría igual al lead.
+        """
         # Ids únicos: una memoria que ya tenga un reminder_id repetido no rompe nada.
         unicos = {p.reminder_id: p for p in self.memoria.recordatorios_pendientes}
         for pendiente in unicos.values():

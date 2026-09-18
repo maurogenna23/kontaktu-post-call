@@ -37,6 +37,15 @@ def es_error_de_configuracion(error: BaseException) -> bool:
     """Clave ausente o inválida, sin permisos, modelo inexistente o cuenta sin saldo.
 
     Con uno de estos errores no se podría clasificar ningún evento: no es un fallo del evento.
+
+    Decisión: el proceso sale con 1 sin escribir nada, en vez de dejar el evento como `otro`.
+    - Si se degradara a `otro`, el hecho quedaría procesado y, al corregir la configuración, volver a
+      correrlo caería como reentrega: el error quedaría para siempre. Sin escribir nada, se reprocesa
+      bien (test_tras_un_error_de_configuracion_el_evento_se_reprocesa_al_corregirla).
+    - R8 se cumple: es un proceso por evento y el siguiente se procesa igual. Los eventos que resuelve
+      la telefonía no crean el cliente del modelo.
+    - Contraargumento: con una clave sin acceso al modelo, ninguna conversación deja salida. El README
+      lo advierte en «Cómo se ejecuta».
     """
     if isinstance(error, openai.RateLimitError):
         return error.code == "insufficient_quota"

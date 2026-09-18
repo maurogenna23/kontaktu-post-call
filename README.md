@@ -15,6 +15,10 @@ rm -rf salida estado && grep -v '^#' eventos/orden.txt | xargs -I{} uv run pytho
 Escribe en `salida/` (se abre con `visor/index.html`) y guarda lo que debe recordar entre procesos en
 `estado/orquestador.sqlite`. Sale con 0 si procesó el evento y con 1 si no pudo, sin escribir nada.
 
+**Requiere acceso a `gpt-5.6-luna`.** Sin él, cada conversación sale con 1 y sin salida (se reprocesa al
+corregirlo). La alternativa es `MODELO=gpt-4o-mini` en `.env`, a costa de aciertos: 72 de 81 etiquetas
+(confunde `cortada` con `visita_sin_confirmar`) y 21 de 27 fechas de callback (ver la tabla del modelo).
+
 ## Cómo funciona
 
 ```
@@ -88,7 +92,7 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (63): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (64): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
 - `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 50 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de

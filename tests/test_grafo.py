@@ -5,6 +5,7 @@ nada, y que un fallo del modelo termine en el error_handler y el evento se proce
 """
 
 import json
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
@@ -55,6 +56,10 @@ class Sistema:
             campana=campana, clasificador=clasificador, salida=Salida(directorio)
         )
         self._directorio = directorio
+
+    def nuevo_proceso(self, clasificador: ClasificadorFalso) -> None:
+        """Otro run.py sobre la misma persistencia, por ejemplo tras corregir la configuración."""
+        self._dependencias = replace(self._dependencias, clasificador=clasificador)
 
     def procesar(self, nombre: str) -> list[str]:
         """Procesa un evento de ejemplo y devuelve los nodos por los que pasó, en orden."""
@@ -188,6 +193,23 @@ def test_un_error_de_configuracion_detiene_el_proceso_sin_escribir_nada(
         sistema.procesar("03-call-ended-elena.json")
     assert modelo.llamadas == 1  # sin reintentos: no se arregla solo
     assert not (tmp_path / "decisiones.jsonl").exists() and not (tmp_path / "ordenes.jsonl").exists()
+
+
+def test_tras_un_error_de_configuracion_el_evento_se_reprocesa_al_corregirla(
+    campana: Campana, tmp_path: Path
+) -> None:
+    """El hecho no queda como procesado: al volver a correrlo, no cae como reentrega."""
+    clave_invalida = error_de_la_api(openai.AuthenticationError, 401, "invalid_api_key")
+    sistema = Sistema(campana, ClasificadorFalso(clave_invalida), tmp_path)
+    with pytest.raises(openai.AuthenticationError):
+        sistema.procesar("03-call-ended-elena.json")
+    assert not (tmp_path / "decisiones.jsonl").exists() and not (tmp_path / "ordenes.jsonl").exists()
+
+    sistema.nuevo_proceso(ClasificadorFalso(respuesta("persona_equivocada")))
+    nodos = sistema.procesar("03-call-ended-elena.json")
+    assert nodos == ["admitir", "clasificar_senalizacion", "clasificar_conversacion", "decidir", "emitir"]
+    assert sistema.decision("evt_03")["etiqueta"] == "persona_equivocada"
+    assert sistema.operaciones("evt_03") == ["cerrar_llamada", "crear_tarea"]
 
 
 def copia(nombre: str, event_id: str, organizacion: str | None = None) -> Evento:
