@@ -22,7 +22,12 @@ from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer, Command, RetryPolicy
 
 from orquestador.catalogo import Clasificacion, DatosConversacion
-from orquestador.clasificador import ERRORES_TRANSITORIOS, Clasificador, interpretar
+from orquestador.clasificador import (
+    Clasificador,
+    es_error_de_configuracion,
+    es_error_transitorio,
+    interpretar,
+)
 from orquestador.config import Campana
 from orquestador.evento import Evento
 from orquestador.memoria import MemoriaLead
@@ -105,7 +110,13 @@ def clasificacion_fallida(estado: Estado, error: NodeError) -> Command[Literal["
 
     Queda como `otro` (N4: una persona lo revisa). Si había cita creada, es un hecho del CRM y la
     etiqueta es visita_reservada aunque el modelo no haya respondido.
+
+    Un error de configuración (clave, modelo, saldo) no es un fallo de este evento: con él no se
+    clasificaría ninguno. Se relanza para que el proceso salga con error sin escribir nada y el
+    evento se pueda reprocesar al corregir la configuración, en vez de llenar el CRM de revisiones.
     """
+    if es_error_de_configuracion(error.error):
+        raise error.error
     hay_cita = estado["evento"].agent_outcome.appointment is not None
     motivo = f"no se pudo clasificar la conversación ({type(error.error).__name__})"
     clasificacion = Clasificacion(
@@ -154,7 +165,7 @@ def construir_grafo(checkpointer: Checkpointer, store: BaseStore) -> Any:
     grafo.add_node(
         "clasificar_conversacion",
         clasificar_conversacion,
-        retry_policy=RetryPolicy(max_attempts=3, retry_on=ERRORES_TRANSITORIOS),
+        retry_policy=RetryPolicy(max_attempts=3, retry_on=es_error_transitorio),
         error_handler=clasificacion_fallida,
     )
     grafo.add_node("decidir", decidir)

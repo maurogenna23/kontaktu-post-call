@@ -21,13 +21,28 @@ from orquestador.evento import Evento, Turno
 
 PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
 
-# Errores transitorios de la API: los reintenta la RetryPolicy del nodo. Una clave inválida o una
-# petición mal formada no se reintenta: falla a la primera y va al error_handler.
-ERRORES_TRANSITORIOS: tuple[type[Exception], ...] = (
-    openai.APIConnectionError,  # incluye APITimeoutError
-    openai.RateLimitError,
-    openai.InternalServerError,
-)
+_TRANSITORIOS = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError)
+_DE_CONFIGURACION = (openai.AuthenticationError, openai.PermissionDeniedError, openai.NotFoundError)
+
+
+def es_error_de_configuracion(error: BaseException) -> bool:
+    """Clave ausente o inválida, sin permisos, modelo inexistente o cuenta sin saldo.
+
+    Con uno de estos errores no se podría clasificar ningún evento: no es un fallo del evento.
+    """
+    if isinstance(error, openai.RateLimitError):
+        return error.code == "insufficient_quota"
+    # Sin OPENAI_API_KEY, el cliente lanza la clase base OpenAIError.
+    return isinstance(error, _DE_CONFIGURACION) or type(error) is openai.OpenAIError
+
+
+def es_error_transitorio(error: BaseException) -> bool:
+    """Conexión, timeout (APITimeoutError hereda de APIConnectionError), límite de uso o 5xx.
+
+    Los reintenta la RetryPolicy del nodo; el resto falla a la primera y va al error_handler.
+    """
+    return isinstance(error, _TRANSITORIOS) and not es_error_de_configuracion(error)
+
 
 EtiquetaConversacion = Literal[
     "visita_reservada",
