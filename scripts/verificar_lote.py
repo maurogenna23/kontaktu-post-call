@@ -359,6 +359,55 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         ),
         # Ocupado a las 19:10: +60 cae fuera, pero 19:40 cumple el rango de 30 a 90 min y la ventana.
         sintetico(40, "02-call-ended-tomas.json", "c_s40", "2026-09-15T19:10:00"),
+        # Callback con día y sin hora, con día sin franja y con franja horaria (martes 17:05).
+        sintetico(
+            41,
+            "09-call-ended-javier.json",
+            "c_s41",
+            "2026-09-15T17:05:00",
+            {
+                "agent_outcome": {"slots_snapshot": {"callback_when_raw": "el jueves"}},
+                "transcript": _turnos(
+                    SALUDO,
+                    "Sí, soy yo, pero ahora no puedo.",
+                    "Sin problema. ¿Cuándo te viene bien?",
+                    "Llámame el jueves, que estaré libre.",
+                    "Perfecto, te llamamos el jueves.",
+                ),
+            },
+        ),
+        sintetico(
+            42,
+            "09-call-ended-javier.json",
+            "c_s42",
+            "2026-09-15T17:05:00",
+            {
+                "agent_outcome": {"slots_snapshot": {"callback_when_raw": "el domingo"}},
+                "transcript": _turnos(
+                    SALUDO,
+                    "Sí, soy yo, pero esta semana imposible.",
+                    "¿Cuándo te viene bien que te llamemos?",
+                    "Llámame el domingo, que es cuando tengo tiempo.",
+                    "Hecho, lo anoto.",
+                ),
+            },
+        ),
+        sintetico(
+            43,
+            "09-call-ended-javier.json",
+            "c_s43",
+            "2026-09-15T17:05:00",
+            {
+                "agent_outcome": {"slots_snapshot": {"callback_when_raw": "mañana por la tarde"}},
+                "transcript": _turnos(
+                    SALUDO,
+                    "Sí, soy yo, estoy conduciendo.",
+                    "Vale, ¿te llamo en otro momento?",
+                    "Sí, mejor mañana por la tarde.",
+                    "Perfecto, mañana por la tarde te llamamos.",
+                ),
+            },
+        ),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -383,7 +432,8 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_12": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T13:30:00+02:00"}),
         "sint_13": Esperado("buzon", [CERRAR, WHATSAPP], {PLANTILLA: "primer_toque_respaldo"}),
         "sint_14": Esperado("cortada", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-16T10:00:00+02:00"}),
-        "sint_15": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-21T10:00:00+02:00"}),
+        # Sábado 13:30: +60 no cabe, pero +30 son las 14:00, el cierre inclusivo de la franja del sábado.
+        "sint_15": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-19T14:00:00+02:00"}),
         "sint_16": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-19T10:00:00+02:00"}),
         "sint_17": Esperado("no_contactar", [CERRAR, "marcar_no_contactar"]),
         "sint_18": Esperado("sin_respuesta", [CERRAR]),
@@ -414,6 +464,13 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_38": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-10-26T10:00:00+01:00"}),
         "sint_39": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T20:00:00+02:00"}),
         "sint_40": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T19:40:00+02:00"}),
+        "sint_41": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-17T10:00:00+02:00"}),
+        "sint_42": Esperado(
+            "callback",
+            [CERRAR, LLAMAR, WHATSAPP],
+            {NO_ANTES_DE: "2026-09-21T10:00:00+02:00", PLANTILLA: "aviso_cambio_hora"},
+        ),
+        "sint_43": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-16T16:00:00+02:00"}),
     }
     return eventos, esperado
 

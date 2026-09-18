@@ -39,15 +39,16 @@ admitir ─┬─ otra organización o reentrega ──────────�
 
 ## Modelo: gpt-5.6-luna
 
-`scripts/comparar_modelos.py`: 24 conversaciones de los lotes de verificación, 3 veces cada una.
+`scripts/comparar_modelos.py`: 27 conversaciones de los lotes de verificación, 3 veces cada una; en los
+callbacks compara la fecha y la hora por separado.
 
-| Modelo | Aciertos | Estables | Latencia | USD / 1000 llamadas |
-|---|---|---|---|---|
-| gpt-4o-mini | 63/72 | 24/24 | 2,3 s | 0,29 |
-| **gpt-5.6-luna** (razonamiento `low`) | **72/72** | 24/24 | 2,2 s | 0,49 |
+| Modelo | Etiquetas | Fechas | Horas | Estables | Latencia | USD / 1000 llamadas |
+|---|---|---|---|---|---|---|
+| gpt-4o-mini | 72/81 | 21/27 | 27/27 | 27/27 | 2,2 s | 0,30 |
+| **gpt-5.6-luna** (razonamiento `low`) | **81/81** | **27/27** | 27/27 | 27/27 | 2,3 s | 0,51 |
 
-gpt-4o-mini confunde siempre `cortada` con `visita_sin_confirmar` y resuelve «el lunes», pedido un
-viernes, como el domingo. Luna acierta todo por 0,2 USD más cada mil llamadas.
+gpt-4o-mini confunde siempre `cortada` con `visita_sin_confirmar` y falla el día de la semana («el
+lunes» pedido un viernes le da domingo). Luna acierta todo por 0,2 USD más cada mil llamadas.
 
 ## Decisiones donde la especificación deja margen
 
@@ -55,8 +56,9 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 - **Ocupado** a los 60 minutos (mitad de 30–90), como el ejemplo resuelto. **Cortada y visita sin
   confirmar** a los 30, o en la primera franja válida si la ventana cerró; la visita no se reserva (N5).
-- **Callback** a la hora pedida, que interpreta el modelo porque es lenguaje libre («el lunes a las once»,
-  «vuelve a las ocho»); fuera de ventana, en la primera franja válida con `aviso_cambio_hora`.
+- **Callback** a lo que pidió el lead, que interpreta el modelo porque es lenguaje libre. Día sin hora: la
+  apertura de la ventana ese día; franja: su comienzo (tarde, 16:00); hora sin fecha o ya pasada: la
+  próxima vez que llega. Si cae en otra hora, u otro día si no dio hora, `aviso_cambio_hora`.
 - **Intentos:** el máximo vale para toda nueva llamada, callbacks incluidos. Agotado, WhatsApp de
   respaldo una vez, o `revisar_llamada` si el lead rechazó WhatsApp.
 - **Recordatorios:** el WhatsApp al lead sale tras 48 horas como mínimo y dentro de la ventana. Al
@@ -78,12 +80,12 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (32): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (43): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
-- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 38 eventos sintéticos, desde cero y
+- `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 42 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de
   hora) y memoria entre eventos. Valida contra los esquemas, invariantes y el resultado esperado de
-  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **54 de 54 correctos.**
+  cada evento; repite el lote (R5) y prueba eventos rotos (R8). **58 de 58 correctos.**
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
 `CLAUDE.md` recoge las instrucciones que seguí con el asistente de programación.

@@ -7,13 +7,17 @@ devuelven las órdenes y la memoria actualizada. No escriben nada ni conocen Lan
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from orquestador.calendario import (
+    a_las,
     dentro_de_ventana,
     describir,
+    describir_dia,
+    en_zona,
     formatear,
     primer_instante_valido,
+    proxima_vez,
     sumar,
     sumar_dias_habiles,
     sumar_dias_naturales,
@@ -209,29 +213,32 @@ def _documentacion_enviada(plan: _Planificador, evento: Evento, campana: Campana
 
 
 def _callback(plan: _Planificador, evento: Evento, datos: DatosConversacion, campana: Campana) -> None:
-    pedido = _instante_pedido(datos, campana)
-    if pedido is None or pedido <= evento.occurred_at:
-        # Decisión: sin una hora concreta (o con una ya pasada) se usa la separación general.
-        separacion = timedelta(hours=campana.reintentos.separacion_minima_horas)
-        plan.llamar(
-            sumar(evento.occurred_at, separacion, campana), "callback sin hora concreta", datos.nota_contexto
-        )
+    """Casos 3 y 12: la llamada va al momento que pidió el lead, ajustado a la ventana.
+
+    Decisión: se usa todo lo que dijo el lead y se completa lo que falta.
+    - Con hora: ese momento. Sin fecha, o si ya pasó, la próxima vez que llegue esa hora: el lead no
+      puede estar pidiendo el pasado.
+    - Día sin hora («el jueves»): la apertura de la ventana ese día.
+    - Ni día ni hora, o solo «hoy»: la separación general.
+    Si la llamada no cae en lo que pidió (otra hora; con día sin hora, otro día), se le avisa.
+    """
+    ocurrio, fecha, hora = evento.occurred_at, datos.callback_fecha, datos.callback_hora
+    if hora is not None:
+        pedido = a_las(fecha, hora, campana) if fecha is not None else ocurrio
+        if pedido <= ocurrio:
+            pedido = proxima_vez(hora, ocurrio, campana)
+        programada = plan.llamar(pedido, "callback solicitado", datos.nota_contexto)
+        if programada is not None and programada != pedido:
+            plan.avisar_cambio_hora(describir(pedido, campana), programada)
         return
-    programada = plan.llamar(pedido, "callback solicitado", datos.nota_contexto)
-    if programada is not None and programada != pedido and plan.whatsapp_permitido:
-        plan.whatsapp(
-            "aviso_cambio_hora",
-            {
-                "hora_pedida": describir(pedido, campana),
-                "hora_propuesta": describir(programada, campana),
-            },
-        )
-
-
-def _instante_pedido(datos: DatosConversacion, campana: Campana) -> datetime | None:
-    if datos.callback_fecha is None or datos.callback_hora is None:
-        return None
-    return datetime.combine(datos.callback_fecha, datos.callback_hora, tzinfo=campana.zona)
+    if fecha is not None and fecha > en_zona(ocurrio, campana).date():
+        dia_pedido = a_las(fecha, time(0), campana)
+        programada = plan.llamar(dia_pedido, "callback solicitado", datos.nota_contexto)
+        if programada is not None and en_zona(programada, campana).date() != fecha:
+            plan.avisar_cambio_hora(describir_dia(dia_pedido, campana), programada)
+        return
+    separacion = timedelta(hours=campana.reintentos.separacion_minima_horas)
+    plan.llamar(sumar(ocurrio, separacion, campana), "callback sin hora concreta", datos.nota_contexto)
 
 
 class _Planificador:
@@ -304,6 +311,14 @@ class _Planificador:
                 "revisar_llamada",
                 "Revisar la llamada",
                 f"{motivo}; el lead no admite el canal de respaldo ({campana.canal_respaldo})",
+            )
+
+    def avisar_cambio_hora(self, pedido: str, programada: datetime) -> None:
+        """Caso 12: si la llamada no cae cuando la pidió el lead, se le avisa (salvo N1)."""
+        if self.whatsapp_permitido:
+            self.whatsapp(
+                "aviso_cambio_hora",
+                {"hora_pedida": pedido, "hora_propuesta": describir(programada, self._campana)},
             )
 
     def whatsapp(self, plantilla: Plantilla, parametros: dict[str, str]) -> None:

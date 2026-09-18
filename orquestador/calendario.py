@@ -23,7 +23,7 @@ def sumar(instante: datetime, plazo: timedelta, campana: Campana) -> datetime:
 
 def sumar_dias_naturales(instante: datetime, dias: int, campana: Campana) -> datetime:
     local = en_zona(instante, campana)
-    return _a_las(local.date() + timedelta(days=dias), local.time(), campana)
+    return a_las(local.date() + timedelta(days=dias), local.time(), campana)
 
 
 def sumar_dias_habiles(instante: datetime, dias: int, campana: Campana) -> datetime:
@@ -34,7 +34,7 @@ def sumar_dias_habiles(instante: datetime, dias: int, campana: Campana) -> datet
         fecha += timedelta(days=1)
         if campana.es_dia_habil(fecha.weekday()):
             contados += 1
-    return _a_las(fecha, local.time(), campana)
+    return a_las(fecha, local.time(), campana)
 
 
 def dentro_de_ventana(instante: datetime, campana: Campana) -> bool:
@@ -52,7 +52,7 @@ def primer_instante_valido(desde: datetime, campana: Campana) -> datetime:
         franja = campana.franja(fecha.weekday())
         if franja is None:
             continue
-        inicio, fin = _a_las(fecha, franja[0], campana), _a_las(fecha, franja[1], campana)
+        inicio, fin = a_las(fecha, franja[0], campana), a_las(fecha, franja[1], campana)
         if dias > 0:
             return inicio
         if local <= fin:
@@ -65,11 +65,24 @@ def formatear(instante: datetime, campana: Campana) -> str:
     return en_zona(instante, campana).isoformat(timespec="seconds")
 
 
+def proxima_vez(hora: time, desde: datetime, campana: Campana) -> datetime:
+    """El primer instante posterior a `desde` en que el reloj de Madrid marca `hora`."""
+    local = en_zona(desde, campana)
+    hoy = a_las(local.date(), hora, campana)
+    return hoy if hoy > desde else a_las(local.date() + timedelta(days=1), hora, campana)
+
+
+def describir_dia(instante: datetime, campana: Campana) -> str:
+    """Texto para personas, solo el día: «domingo 20»."""
+    local = en_zona(instante, campana)
+    return f"{_NOMBRES_DIA[local.weekday()]} {local.day}"
+
+
 def describir(instante: datetime, campana: Campana) -> str:
     """Texto para personas: «jueves 17 a las 11:00»."""
-    local = en_zona(instante, campana)
-    return f"{_NOMBRES_DIA[local.weekday()]} {local.day} a las {local:%H:%M}"
+    return f"{describir_dia(instante, campana)} a las {en_zona(instante, campana):%H:%M}"
 
 
-def _a_las(fecha: date, hora: time, campana: Campana) -> datetime:
+def a_las(fecha: date, hora: time, campana: Campana) -> datetime:
+    """La fecha y la hora de reloj dadas, en la zona de la campaña."""
     return datetime.combine(fecha, hora.replace(tzinfo=None), tzinfo=campana.zona)

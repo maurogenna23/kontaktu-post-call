@@ -217,3 +217,26 @@ def test_ocupado_se_queda_entre_30_y_90_minutos_si_la_ventana_lo_permite(
         en("02-call-ended-tomas.json", instante), clasificacion, SIN_DATOS, MemoriaLead(), campana
     )
     assert cuerpo(plan, "programar_llamada")["no_antes_de"] == esperado
+
+
+@pytest.mark.parametrize(
+    ("fecha", "hora", "esperado", "aviso"),
+    [
+        # Martes 15 a las 17:05 (instante de referencia del evento 09).
+        (None, time(19, 0), "2026-09-15T19:00:00+02:00", None),  # hora sin fecha, aún por llegar hoy
+        (None, time(10, 0), "2026-09-16T10:00:00+02:00", None),  # hora sin fecha, ya pasó: mañana
+        (date(2026, 9, 14), time(18, 0), "2026-09-15T18:00:00+02:00", None),  # fecha pasada: próxima vez
+        (date(2026, 9, 17), None, "2026-09-17T10:00:00+02:00", None),  # día sin hora: apertura ese día
+        (date(2026, 9, 20), None, "2026-09-21T10:00:00+02:00", "domingo 20"),  # domingo sin franja: aviso
+        (date(2026, 9, 15), None, "2026-09-15T19:05:00+02:00", None),  # «hoy» sin hora: separación general
+        (None, None, "2026-09-15T19:05:00+02:00", None),  # ni día ni hora: separación general
+    ],
+)
+def test_callback_usa_lo_que_dijo_el_lead_y_completa_lo_que_falta(
+    fecha: date | None, hora: time | None, esperado: str, aviso: str | None, campana: Campana
+) -> None:
+    datos = DatosConversacion(callback_fecha=fecha, callback_hora=hora)
+    plan = llamada("09-call-ended-javier.json", campana, etiqueta="callback", datos=datos)
+    assert cuerpo(plan, "programar_llamada")["no_antes_de"] == esperado
+    avisos = [o.cuerpo["parametros"] for o in plan.ordenes if o.operacion == "enviar_plantilla_whatsapp"]
+    assert [a["hora_pedida"] for a in avisos] == ([aviso] if aviso else [])

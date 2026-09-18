@@ -78,7 +78,8 @@ class SalidaModelo(BaseModel):
     # No se emite: pedir la frase literal obliga al modelo a anclar la etiqueta en la transcripción.
     evidencia: str
     # Decisión: la hora del callback la interpreta el modelo, porque es lenguaje libre («el lunes a
-    # las once», «vuelve a las ocho»). El código la pasa a hora de Madrid y la ajusta a la ventana.
+    # las once», «vuelve a las ocho»). El código completa lo que falte y la ajusta a la ventana
+    # (reglas._callback).
     callback_fecha: str | None
     callback_hora: str | None
     rechaza_whatsapp: bool

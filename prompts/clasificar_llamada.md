@@ -50,10 +50,15 @@ estar obsoletas si la conversación siguió después. Ante una discrepancia, man
 - `motivo`: una frase en español que explique la etiqueta.
 - `confianza`: de 0 a 1, cuánta seguridad tienes en la etiqueta.
 - `evidencia`: la frase literal de la transcripción que más pesa en la decisión.
-- `callback_fecha` y `callback_hora`: solo si la etiqueta es `callback` y el lead dijo un momento.
-  Resuélvelo a partir del instante de referencia: fecha `AAAA-MM-DD` y hora `HH:MM` en 24 horas,
-  hora de Madrid. Si dice una hora ambigua («a las seis»), elige la que tenga sentido en horario de
-  tarde o de trabajo. Si no dijo un momento concreto, deja los dos a null.
+- `callback_fecha` y `callback_hora`: solo si la etiqueta es `callback`. Resuélvelos a partir del
+  instante de referencia, nunca un momento anterior a él: fecha `AAAA-MM-DD` y hora `HH:MM` en 24
+  horas, hora de Madrid.
+  - Si dice un día sin hora («el jueves»), pon la fecha y deja la hora a null.
+  - Si dice una franja, usa siempre su comienzo: por la mañana o a primera hora, 10:00; a mediodía,
+    13:00; por la tarde, 16:00; por la noche, 20:00.
+  - Si dice una hora ambigua («a las seis»), elige la que tenga sentido en horario de tarde o de
+    trabajo.
+  - Si no dijo ni día ni hora, deja los dos a null.
 - `rechaza_whatsapp`: true si el lead rechaza recibir cosas por WhatsApp.
 - `email`: el email que dio el lead, o null.
 - `nota_contexto`: lo que ya se sabe del lead para que el próximo agente no repita preguntas
