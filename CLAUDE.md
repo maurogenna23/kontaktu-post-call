@@ -24,8 +24,9 @@ así que se implementa lo que dice la especificación, no lo que pasa con los 16
     órdenes; un evento de otra organización con la misma clave cae en otro thread.
   - **Store** (`SqliteStore`) por lead: intentos, recordatorios pendientes, baja, WhatsApp rechazado,
     llamadas cortadas. Es la memoria que comparten todos los eventos de un lead.
-- Los modelos Pydantic que se guardan en el checkpoint se registran en el serializador
-  (`allowed_msgpack_modules`); si aparece el aviso "Deserializing unregistered type", falta uno.
+- Los modelos Pydantic que se guardan en el checkpoint van en `MODELOS_EN_ESTADO` (`grafo.py`), que
+  arma el serializador de producción y el de los tests. Uno sin registrar vuelve del checkpoint como
+  dict, con el log "Blocked deserialization of…"; un test compara la lista con los modelos de `Estado`.
 - El LLM solo clasifica conversaciones con una persona. Lo que resuelve la señalización (SIP, `amd`)
   se decide en código. El modelo solo interpreta la hora que pide el lead (callback); plazos, ventana,
   días hábiles y zona horaria los calcula el código.

@@ -15,12 +15,14 @@ devuelven solo lo que cambia. Persistencia (se arma en aplicacion.py):
 from dataclasses import dataclass
 from typing import Any, Literal, TypedDict
 
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.errors import NodeError
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer, Command, RetryPolicy
+from pydantic import BaseModel
 
 from orquestador.catalogo import Clasificacion, DatosConversacion, Etiqueta
 from orquestador.clasificador import (
@@ -30,8 +32,8 @@ from orquestador.clasificador import (
     interpretar,
 )
 from orquestador.config import Campana
-from orquestador.evento import Evento
-from orquestador.memoria import MemoriaLead
+from orquestador.evento import Amd, Campania, Cita, Evento, Lead, Mensaje, NotasAgente, Telefonia, Turno
+from orquestador.memoria import MemoriaLead, RecordatorioPendiente
 from orquestador.ordenes import Orden
 from orquestador.reglas import decidir_llamada, decidir_mensaje
 from orquestador.salida import LineaDecision, Salida
@@ -47,6 +49,22 @@ class Estado(TypedDict, total=False):
     memoria: MemoriaLead | None
     # Lo último que escribe el grafo. Queda en el checkpoint del hecho y marca que ya se procesó.
     decision: LineaDecision
+
+
+# Los modelos Pydantic que viajan en el estado y, por tanto, en el checkpoint. Con la lista explícita,
+# el serializador bloquea cualquier otro tipo: vuelve como dict y LangGraph registra «Blocked
+# deserialization of…». tests/test_grafo.py comprueba que coincide con los modelos que alcanza Estado.
+MODELOS_EN_ESTADO: tuple[type[BaseModel], ...] = (
+    Evento, Campania, Lead, Amd, Telefonia, Turno, Cita, NotasAgente, Mensaje, Clasificacion,
+    DatosConversacion, Orden, MemoriaLead, RecordatorioPendiente, LineaDecision,
+)  # fmt: skip
+
+
+def serializador() -> JsonPlusSerializer:
+    """El serializador del checkpoint, con los modelos del estado registrados."""
+    return JsonPlusSerializer(
+        allowed_msgpack_modules=[(modelo.__module__, modelo.__name__) for modelo in MODELOS_EN_ESTADO]
+    )
 
 
 @dataclass(frozen=True)

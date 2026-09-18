@@ -8,7 +8,7 @@ import json
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_args, get_type_hints
 
 import httpx2
 import openai
@@ -16,11 +16,19 @@ import pytest
 from conftest import evento
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
+from pydantic import BaseModel
 
 from orquestador.clasificador import EtiquetaConversacion, SalidaModelo
 from orquestador.config import Campana
 from orquestador.evento import Evento
-from orquestador.grafo import Dependencias, construir_grafo, id_del_hecho
+from orquestador.grafo import (
+    MODELOS_EN_ESTADO,
+    Dependencias,
+    Estado,
+    construir_grafo,
+    id_del_hecho,
+    serializador,
+)
 from orquestador.salida import Salida
 
 
@@ -48,10 +56,13 @@ def respuesta(etiqueta: EtiquetaConversacion, callback: date | None = None) -> S
 
 
 class Sistema:
-    """El grafo compilado con un checkpointer y un store que duran todo el test, como el SQLite."""
+    """El grafo compilado con un checkpointer y un store que duran todo el test, como el SQLite.
+
+    El checkpointer usa el serializador de producción.
+    """
 
     def __init__(self, campana: Campana, clasificador: ClasificadorFalso, directorio: Path) -> None:
-        self._grafo = construir_grafo(InMemorySaver(), InMemoryStore())
+        self._grafo = construir_grafo(InMemorySaver(serde=serializador()), InMemoryStore())
         self._dependencias = Dependencias(
             campana=campana, clasificador=clasificador, salida=Salida(directorio)
         )
@@ -243,3 +254,25 @@ def test_un_evento_ajeno_no_pisa_la_etiqueta_que_repite_la_reentrega_del_nuestro
     assert sistema.decision("evt_ajeno")["etiqueta"] == "no_aplica"
     assert sistema.decision("evt_reentrega")["etiqueta"] == "ocupado"
     assert sistema.operaciones("evt_reentrega") == []
+
+
+def modelos_alcanzables(tipo: object, vistos: set[type[BaseModel]]) -> set[type[BaseModel]]:
+    """Los modelos Pydantic que puede contener un valor de este tipo, recorriendo campo a campo."""
+    if isinstance(tipo, type) and issubclass(tipo, BaseModel):
+        if tipo not in vistos:
+            vistos.add(tipo)
+            for campo in tipo.model_fields.values():
+                modelos_alcanzables(campo.annotation, vistos)
+    else:
+        for argumento in get_args(tipo):  # uniones, listas, tuplas, Annotated…
+            modelos_alcanzables(argumento, vistos)
+    return vistos
+
+
+def test_el_serializador_registra_cada_modelo_que_viaja_en_el_estado() -> None:
+    """Un modelo sin registrar vuelve del checkpoint como dict, y solo falla si algo lo usa como
+    objeto: los tests de arriba no lo detectan en todos los caminos. Este compara los tipos."""
+    en_el_estado: set[type[BaseModel]] = set()
+    for tipo in get_type_hints(Estado).values():
+        modelos_alcanzables(tipo, en_el_estado)
+    assert en_el_estado == set(MODELOS_EN_ESTADO)
