@@ -6,8 +6,9 @@ Dos lotes, cada uno desde cero en una carpeta temporal (no toca salida/ ni estad
 un proceso por evento, como pide el enunciado:
 1. El lote de ejemplo (eventos/orden.txt).
 2. Un lote sintético derivado de esos eventos: los casos ⚠ de casos.md sin ejemplo (603, callback
-   fuera de ventana, descartado), IVR y 5xx, bordes de la ventana (sábado, viernes por la noche),
-   memoria entre eventos (segunda cortada, intentos agotados, baja previa) y una reentrega.
+   fuera de ventana, descartado), IVR, 5xx, 408 y buzón de LiveKit, otras horas y otros días
+   (sábado, domingo, 19:45, cambio de hora), memoria entre eventos (segunda cortada, intentos
+   agotados, baja con recordatorios, respuesta tras un recordatorio enviado) y reentregas.
 
 Comprueba en cada lote:
 - esquemas: cada decisión contra decision.schema.json y cada cuerpo contra su operación del OpenAPI;
@@ -136,7 +137,7 @@ def sintetico(
     momento = f"{instante}+02:00"
     identidad: dict[str, Any] = {
         "event_id": f"sint_{n:02d}",
-        "idempotency_key": clave if evento["type"] == "call.ended" else f"wa-sint-{n:02d}",
+        "idempotency_key": clave if evento["type"] == "call.ended" else f"wa-sint-{hecho or n:02d}",
         "occurred_at": momento,
         "delivery_attempt": 2 if hecho else 1,
         "campaign": {"entry_id": f"ce_sint_{hecho or n:02d}"},
@@ -285,6 +286,60 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
                 },
             },
         ),
+        # Caso 6: buzón detectado por LiveKit (machine-vm y machine-unavailable) con intentos
+        # disponibles, y caso 4 con 408.
+        sintetico(21, "12-call-ended-nuria.json", "c_s21", "2026-09-15T11:00:00"),
+        sintetico(
+            22,
+            "12-call-ended-nuria.json",
+            "c_s22",
+            "2026-09-15T11:30:00",
+            {"telephony": {"amd": {"result": "machine-unavailable"}}},
+        ),
+        sintetico(
+            23,
+            "01-call-ended-nuria.json",
+            "c_s23",
+            "2026-09-15T12:00:00",
+            {"telephony": {"sip_status_code": 408, "sip_status": "Request Timeout"}},
+        ),
+        # Otras horas y otros días: ocupado a las 19:45 y un evento en domingo.
+        sintetico(24, "02-call-ended-tomas.json", "c_s24", "2026-09-15T19:45:00"),
+        sintetico(25, "01-call-ended-nuria.json", "c_s25", "2026-09-20T12:00:00"),
+        # Callback con día de la semana, pedido un viernes.
+        sintetico(
+            26,
+            "09-call-ended-javier.json",
+            "c_s26",
+            "2026-09-18T17:00:00",
+            {
+                "agent_outcome": {"slots_snapshot": {"callback_when_raw": "el lunes a las once"}},
+                "transcript": _turnos(
+                    SALUDO,
+                    "Sí, soy yo.",
+                    "Te llamo por tu consulta sobre la venta en Boadilla. ¿Tienes un minuto?",
+                    "Ahora no, estoy saliendo del trabajo. Llámame el lunes a las once, por favor.",
+                    "Perfecto, te llamamos el lunes a las once. Un saludo.",
+                ),
+            },
+        ),
+        # R7: el lead responde el viernes; el WhatsApp del jueves ya salió y solo queda el del comercial.
+        sintetico(28, "08-call-ended-marcos.json", "c_s28", "2026-09-15T16:42:00"),
+        sintetico(29, "14-message-received-marcos.json", "c_s28", "2026-09-18T10:00:00"),
+        # N2: la baja cancela los recordatorios pendientes; después, su WhatsApp no tiene nada que cancelar.
+        sintetico(30, "08-call-ended-marcos.json", "c_s30", "2026-09-15T16:42:00"),
+        sintetico(31, "06-call-ended-pedro.json", "c_s30", "2026-09-16T11:00:00"),
+        sintetico(32, "14-message-received-marcos.json", "c_s30", "2026-09-16T12:00:00"),
+        # R3: documentación el viernes → el recordatorio al lead cae el lunes, no el domingo.
+        sintetico(33, "08-call-ended-marcos.json", "c_s33", "2026-09-18T16:42:00"),
+        # Reentrega de un WhatsApp: repite no_aplica sin órdenes.
+        sintetico(34, "14-message-received-marcos.json", "c_s28", "2026-09-18T10:05:00", hecho=29),
+        # Callback en el tercer intento: los intentos de voz están agotados → respaldo (N3).
+        sintetico(35, "01-call-ended-nuria.json", "c_s35", "2026-09-15T10:00:00"),
+        sintetico(36, "02-call-ended-tomas.json", "c_s35", "2026-09-15T12:30:00"),
+        sintetico(37, "09-call-ended-javier.json", "c_s35", "2026-09-15T17:05:00"),
+        # Cambio de hora: sábado 24 de octubre a las 12:30 + 2 h → fuera de franja → lunes 26 con +01:00.
+        sintetico(38, "01-call-ended-nuria.json", "c_s38", "2026-10-24T12:30:00"),
     ]
     esperado = {
         "sint_01": Esperado(
@@ -315,6 +370,29 @@ def lote_sintetico() -> tuple[list[dict[str, Any]], dict[str, Esperado]]:
         "sint_18": Esperado("sin_respuesta", [CERRAR]),
         "sint_19": Esperado("no_aplica", []),
         "sint_20": Esperado("visita_reservada", [CERRAR, TAREA], {VENCE: "2026-09-15T16:10:00+02:00"}),
+        "sint_21": Esperado("buzon", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T13:00:00+02:00"}),
+        "sint_22": Esperado("buzon", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T13:30:00+02:00"}),
+        "sint_23": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-15T14:00:00+02:00"}),
+        "sint_24": Esperado("ocupado", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-16T10:00:00+02:00"}),
+        "sint_25": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-21T10:00:00+02:00"}),
+        "sint_26": Esperado("callback", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-09-21T11:00:00+02:00"}),
+        "sint_28": Esperado("documentacion_enviada", [CERRAR, RECORDATORIO, RECORDATORIO]),
+        "sint_29": Esperado("no_aplica", ["cancelar_recordatorio"]),
+        "sint_30": Esperado("documentacion_enviada", [CERRAR, RECORDATORIO, RECORDATORIO]),
+        "sint_31": Esperado(
+            "no_contactar", [CERRAR, "marcar_no_contactar", "cancelar_recordatorio", "cancelar_recordatorio"]
+        ),
+        "sint_32": Esperado("no_aplica", []),
+        "sint_33": Esperado(
+            "documentacion_enviada",
+            [CERRAR, RECORDATORIO, RECORDATORIO],
+            {"programar_recordatorio.cuando": ["2026-09-21T10:00:00+02:00", "2026-09-23T16:42:00+02:00"]},
+        ),
+        "sint_34": Esperado("no_aplica", []),
+        "sint_35": Esperado("sin_respuesta", [CERRAR, LLAMAR]),
+        "sint_36": Esperado("ocupado", [CERRAR, LLAMAR]),
+        "sint_37": Esperado("callback", [CERRAR, WHATSAPP], {PLANTILLA: "primer_toque_respaldo"}),
+        "sint_38": Esperado("sin_respuesta", [CERRAR, LLAMAR], {NO_ANTES_DE: "2026-10-26T10:00:00+01:00"}),
     }
     return eventos, esperado
 

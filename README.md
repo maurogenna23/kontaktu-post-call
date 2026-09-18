@@ -62,9 +62,13 @@ Cada una lleva un comentario `Decisión:` en el código.
   franja válida aunque pase de 4 horas. La visita acordada de palabra no se reserva (N5).
 - **Callback:** a la hora pedida; fuera de ventana, la primera franja válida más `aviso_cambio_hora`.
   Sin hora concreta, la separación general de 2 horas.
-- **Intentos:** el máximo vale para cualquier nueva llamada. Agotado, WhatsApp de respaldo una sola vez;
-  si el lead rechazó WhatsApp, tarea `revisar_llamada`.
-- **Baja:** manda sobre cualquier etiqueta; después, cualquier evento del lead solo cierra la llamada.
+- **Intentos:** el máximo vale para cualquier nueva llamada, también un callback. Agotado, WhatsApp de
+  respaldo una sola vez; si el lead rechazó WhatsApp, tarea `revisar_llamada`.
+- **Recordatorios:** el de WhatsApp al lead sale como mínimo a las 48 horas, dentro de la ventana
+  (documentación el viernes → lunes a las 10:00). Al responder el lead solo se cancelan los que aún no
+  han salido.
+- **Baja:** manda sobre cualquier etiqueta y cancela los recordatorios pendientes, que si no le
+  llegarían igual; después, cualquier evento del lead solo cierra la llamada.
 - **La cita del CRM manda sobre el modelo:** con cita es `visita_reservada` (salvo baja); sin cita, una
   visita nunca está reservada. Si el modelo falla y hay cita, sigue siendo `visita_reservada`.
 - **Descolgó una persona pero no habló:** `otro`. Un `uncertain` del detector se trata como persona.
@@ -82,18 +86,21 @@ Cada una lleva un comentario `Decisión:` en el código.
 - **Eventos del mismo lead en paralelo.** El contrato es un proceso por evento, en orden; no hay
   bloqueos por lead.
 - **Timeout por nodo** de LangGraph 1.2: exige nodos asíncronos. El timeout va en el cliente de OpenAI.
-- **LangSmith:** opcional por variables de entorno (`.env.example`); el sistema no depende de él.
+- **LangSmith, apagado por defecto.** Se activa con las variables de `.env.example` y entonces hay red
+  hacia LangSmith además del modelo, que la restricción del enunciado no contempla. El sistema no
+  depende de él.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest`: 18 tests del dominio (ventana, días hábiles, reglas N1 a N5, recordatorios). Uno
+- `uv run pytest`: 21 tests del dominio (ventana, días hábiles, reglas N1 a N5, recordatorios). Uno
   reproduce el ejemplo resuelto campo por campo.
 - `uv run python scripts/verificar_lote.py`: corre, desde cero y un proceso por evento, el lote de
-  ejemplo y un lote sintético de 20 eventos con los casos sin ejemplo (603, callback fuera de ventana,
-  descartado, IVR, 5xx), bordes de la ventana y memoria entre eventos. Valida decisiones y cuerpos contra
+  ejemplo y un lote sintético de 37 eventos: los casos sin ejemplo (603, callback fuera de ventana,
+  descartado, IVR, 5xx), otras horas y otros días (sábado, domingo, 19:45, cambio de hora) y memoria
+  entre eventos (segunda cortada, intentos agotados, baja con recordatorios). Valida decisiones y cuerpos contra
   los esquemas, invariantes (llamadas en ventana, un `cerrar_llamada` por llamada nueva, nada tras
   reentregas, otras organizaciones ni bajas) y el resultado esperado de cada evento; repite el lote
-  para R5 y prueba eventos rotos para R8. **36 de 36 correctos.**
+  para R5 y prueba eventos rotos para R8. **53 de 53 correctos.**
 - `uv run python scripts/comparar_modelos.py`: la tabla de arriba.
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
