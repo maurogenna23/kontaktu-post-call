@@ -16,7 +16,7 @@ Escribe en `salida/` (se abre con `visor/index.html`) y guarda lo que debe recor
 `estado/orquestador.sqlite`. Sale con 0 si procesó el evento y con 1 si no pudo, sin escribir nada.
 
 **Requiere acceso a `gpt-5.6-luna`.** Sin él, cada conversación sale con 1 y sin salida (se reprocesa al
-corregirlo). La alternativa es `MODELO=gpt-4o-mini` en `.env`, a costa de aciertos: 72 de 81 etiquetas
+corregirlo). La alternativa es `MODELO=gpt-4o-mini` en `.env`, a costa de aciertos: 77 de 90 etiquetas
 (confunde `cortada` con `visita_sin_confirmar`) y 21 de 27 fechas de callback (ver la tabla del modelo).
 
 ## Cómo funciona
@@ -44,16 +44,17 @@ admitir ─┬─ otra organización o reentrega ──────────�
 
 ## Modelo: gpt-5.6-luna
 
-`scripts/comparar_modelos.py`: 27 conversaciones de los lotes de verificación, 3 veces cada una; en los
+`scripts/comparar_modelos.py`: 30 conversaciones de los lotes de verificación, 3 veces cada una; en los
 callbacks compara la fecha y la hora por separado.
 
 | Modelo | Etiquetas | Fechas | Horas | Estables | Latencia | USD / 1000 llamadas |
 |---|---|---|---|---|---|---|
-| gpt-4o-mini | 72/81 | 21/27 | 27/27 | 27/27 | 2,2 s | 0,30 |
-| **gpt-5.6-luna** (razonamiento `low`) | **81/81** | **27/27** | 27/27 | 27/27 | 2,3 s | 0,51 |
+| gpt-4o-mini | 77/90 | 21/27 | 27/27 | 29/30 | 2,4 s | 0,30 |
+| **gpt-5.6-luna** (razonamiento `low`) | **90/90** | **27/27** | 27/27 | **30/30** | 2,4 s | 0,51 |
 
-gpt-4o-mini confunde siempre `cortada` con `visita_sin_confirmar` y falla el día de la semana («el
-lunes» pedido un viernes le da domingo). Luna acierta todo por 0,2 USD más cada mil llamadas.
+gpt-4o-mini confunde siempre `cortada` con `visita_sin_confirmar`, falla el día de la semana («el
+lunes» pedido un viernes le da domingo) y, una de tres veces, da `documentacion_enviada` a quien rechazó
+WhatsApp: le programaría uno (N1). Luna acierta todo por 0,21 USD más cada mil llamadas, a igual latencia.
 
 ## Decisiones donde la especificación deja margen
 
