@@ -108,4 +108,5 @@ Cada una lleva un comentario `Decisión:` en el código.
   cada evento; repite el lote (R5) y prueba eventos rotos (R8). **66 de 66 correctos.**
 - `uv run ruff check . && uv run mypy orquestador run.py tests scripts`.
 
-`CLAUDE.md` recoge las instrucciones que seguí con el asistente de programación.
+`CLAUDE.md` recoge las instrucciones que seguí con el asistente de programación, y
+`asistente/prompts.md`, los prompts que le envié durante el reto.
