@@ -324,7 +324,14 @@ class _Planificador:
             )
 
     def whatsapp(self, plantilla: Plantilla, parametros: dict[str, str]) -> None:
+        # Decisión: la especificación no conecta lead.language con el idioma de la plantilla; lo
+        # conectamos, con "es" (el default del OpenAPI) si falta o viene vacío. Consecuencias:
+        # - Los parámetros que armamos siguen en español: a un lead en "ca" le llega la plantilla en
+        #   catalán con «jueves 17 a las 10:00» dentro. Se acepta porque los parámetros no se comparan.
+        # - El recordatorio al lead (programar_recordatorio) también es un WhatsApp, pero su cuerpo no
+        #   tiene idioma en el OpenAPI: ese sale en el idioma que decida el CRM.
         lead = self._evento.lead
+        idioma = (lead.language or "").strip() or "es"
         base = {
             "nombre": (lead.full_name or "").split(" ")[0],
             "inmueble": lead.property_address or lead.property_ref or "",
@@ -336,6 +343,7 @@ class _Planificador:
                 telefono=lead.phone,
                 plantilla=plantilla,
                 parametros={clave: valor for clave, valor in (base | parametros).items() if valor},
+                idioma=idioma,
             ),
         )
 

@@ -27,6 +27,7 @@ class Lead(_Entrada):
     full_name: str | None = None
     property_ref: str | None = None
     property_address: str | None = None
+    language: str | None = None
 
 
 class Amd(_Entrada):

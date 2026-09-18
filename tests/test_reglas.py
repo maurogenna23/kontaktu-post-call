@@ -309,3 +309,14 @@ def test_reprocesar_el_mismo_hecho_no_duplica_los_recordatorios_en_la_memoria(ca
         campana,
     )
     assert otra_vez.memoria.recordatorios_pendientes == primera.memoria.recordatorios_pendientes
+
+
+@pytest.mark.parametrize(("idioma", "esperado"), [("ca", "ca"), ("", "es"), (None, "es")])
+def test_la_plantilla_sale_en_el_idioma_del_lead(idioma: str | None, esperado: str, campana: Campana) -> None:
+    ev = evento("12-call-ended-nuria.json")
+    ev = ev.model_copy(update={"lead": ev.lead.model_copy(update={"language": idioma})})
+    assert ev.telephony is not None
+    clasificacion = clasificar_por_senalizacion(ev.telephony, bool(ev.transcript))
+    assert clasificacion is not None
+    plan = decidir_llamada(ev, clasificacion, SIN_DATOS, MemoriaLead(intentos=2), campana)  # buzón, 3 de 3
+    assert cuerpo(plan, "enviar_plantilla_whatsapp")["idioma"] == esperado

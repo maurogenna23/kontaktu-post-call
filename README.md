@@ -72,6 +72,8 @@ Cada una lleva un comentario `Decisión:` en el código.
 - **Descolgó y no habló:** `otro`. **Plazos** en horas: tiempo absoluto; en días: misma hora de Madrid.
 - **Confianza:** 0,97 SIP, 0,9 detector de buzón, 0,7 heurística; en conversaciones, la del modelo.
 - **Ids:** `orden_id` con la fórmula del ejemplo resuelto; `reminder_id` estable y persistido.
+- **Idioma del WhatsApp:** el de `lead.language` (`es` si falta o viene vacío). Los parámetros que
+  armamos siguen en español, y el recordatorio al lead no lleva idioma en el OpenAPI: lo decide el CRM.
 
 ## Qué dejé fuera
 
@@ -83,7 +85,7 @@ Cada una lleva un comentario `Decisión:` en el código.
 
 ## Cómo lo verifiqué
 
-- `uv run pytest` (60): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
+- `uv run pytest` (63): reglas, calendario, el ejemplo resuelto campo por campo y el grafo completo con
   un clasificador falso: nodos recorridos, reentregas y cada camino de fallo del modelo.
 - `uv run python scripts/verificar_lote.py`: el lote de ejemplo y 50 eventos sintéticos, desde cero y
   un proceso por evento. Incluye los casos sin ejemplo, otras horas y días (domingo, 19:45, cambio de
